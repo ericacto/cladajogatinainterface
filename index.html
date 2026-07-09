@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Quadro de Avisos</title>
+<style>
+  :root { --bg: #171410; --panel: #24201a; --accent: #c9a35a; --text: #eee5d3; --muted: #9a8f78; }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: Georgia, serif; margin: 0; padding: 24px; }
+  h1 { color: var(--accent); border-bottom: 1px solid var(--accent); padding-bottom: 8px; }
+  .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; }
+  select, input, button { background: var(--panel); color: var(--text); border: 1px solid var(--muted); padding: 6px 10px; border-radius: 4px; font-family: inherit; }
+  button { cursor: pointer; background: var(--accent); color: #1a1a1a; font-weight: bold; border: none; }
+  button:hover { opacity: 0.85; }
+  .gold { color: var(--accent); font-weight: bold; }
+  .categories { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .category { background: var(--panel); border: 1px solid #3a3428; border-radius: 8px; padding: 14px; }
+  .category h2 { margin-top: 0; font-size: 1.1em; color: var(--accent); }
+  .listing { border-top: 1px solid #3a3428; padding: 8px 0; font-size: 0.92em; }
+  .listing:first-of-type { border-top: none; }
+  .listing .price { color: var(--accent); }
+  .listing button { margin-top: 4px; font-size: 0.85em; padding: 3px 8px; }
+  .empty { color: var(--muted); font-style: italic; }
+  .new-post { margin-top: 24px; background: var(--panel); padding: 14px; border-radius: 8px; }
+  .new-post h2 { color: var(--accent); margin-top: 0; }
+  .new-post label { display: block; margin: 8px 0 2px; font-size: 0.85em; color: var(--muted); }
+  .new-post input, .new-post select { width: 100%; }
+</style>
+</head>
+<body>
+
+<h1>Quadro de Avisos</h1>
+
+<div class="toolbar">
+  <label>Clã: <input id="clanName" value="Pé de Alface"></label>
+  <label>PIN: <input id="clanPin" type="password" maxlength="4" placeholder="0000"></label>
+  <span>Ouro: <span class="gold" id="goldDisplay">—</span></span>
+  <span>Dia: <span id="dayDisplay">—</span></span>
+  <button onclick="loadBoard()">Entrar / Atualizar</button>
+</div>
+<div id="errorBanner" style="display:none; background:#4a1f1f; color:#f0c0c0; padding:8px 12px; border-radius:4px; margin-bottom:14px;"></div>
+
+<div class="categories" id="categories"></div>
+
+<div class="new-post">
+  <h2>Nova Postagem</h2>
+  <label>Categoria</label>
+  <select id="newCategory" onchange="renderNewPostFields()">
+    <option value="Mercado">Mercado</option>
+    <option value="Contratar">Contratar</option>
+    <option value="Informação">Informação</option>
+    <option value="Benfeitorias">Benfeitorias</option>
+  </select>
+  <div id="newFields"></div>
+  <label>Preço (g)</label>
+  <input id="newPrice" type="number" value="0">
+  <label>Alvo (opcional — deixe vazio pra público)</label>
+  <input id="newTarget" placeholder="nome do clã">
+  <button style="margin-top:10px" onclick="submitPost()">Publicar</button>
+</div>
+
+<script>
+// Change this to your Fly.io URL once deployed, e.g. "https://quadro-de-avisos.fly.dev"
+const API = "http://localhost:8000";
+
+function clan() { return document.getElementById('clanName').value; }
+function pin() { return document.getElementById('clanPin').value; }
+
+function showError(msg) {
+  const banner = document.getElementById('errorBanner');
+  banner.textContent = msg;
+  banner.style.display = msg ? 'block' : 'none';
+}
+
+async function apiCall(url, options = {}) {
+  let res, data;
+  try {
+    res = await fetch(url, options);
+  } catch (networkErr) {
+    showError(`Não consegui falar com o servidor (${API}). Ele está rodando?`);
+    throw networkErr;
+  }
+  try {
+    data = await res.json();
+  } catch {
+    data = {};
+  }
+  if (!res.ok) {
+    showError(data.detail || `Erro ${res.status}`);
+    throw new Error(data.detail || `HTTP ${res.status}`);
+  }
+  showError(null);
+  return data;
+}
+
+async function loadBoard() {
+  try {
+    // Verify the PIN first so a wrong PIN shows up clearly, not buried in a 403
+    // the next time the player tries to buy something.
+    await apiCall(`${API}/clans/${encodeURIComponent(clan())}/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin: pin() }),
+    });
+  } catch {
+    return; // error already shown by apiCall
+  }
+
+  let data;
+  try {
+    data = await apiCall(`${API}/board/${encodeURIComponent(clan())}`);
+  } catch {
+    return;
+  }
+
+  document.getElementById('goldDisplay').textContent = data.clan_gold ?? '—';
+  document.getElementById('dayDisplay').textContent = data.world_day;
+
+  const catDiv = document.getElementById('categories');
+  catDiv.innerHTML = '';
+  for (const [cat, items] of Object.entries(data.listings)) {
+    const box = document.createElement('div');
+    box.className = 'category';
+    box.innerHTML = `<h2>${cat}</h2>`;
+    if (items.length === 0) {
+      box.innerHTML += `<div class="empty">Nada por aqui.</div>`;
+    }
+    for (const l of items) {
+      const desc = describeListing(l);
+      const mine = l.seller_clan === clan();
+      box.innerHTML += `
+        <div class="listing">
+          <div>${desc} — <span class="price">${l.price}g</span></div>
+          <div style="color:var(--muted); font-size:0.85em">${l.seller_clan}${l.target_clan ? ' → ' + l.target_clan : ''} · ${l.id}</div>
+          <button onclick="buy('${l.id}', ${mine})">${mine ? 'Cancelar' : 'Comprar'}</button>
+        </div>`;
+    }
+    catDiv.appendChild(box);
+  }
+}
+
+function describeListing(l) {
+  if (l.category === 'Mercado') return `${l.item_name} (${l.quantity} disponível)`;
+  if (l.category === 'Contratar') return l.adventurer_name || '?';
+  if (l.category === 'Informação') return l.title || '?';
+  if (l.category === 'Benfeitorias') return l.title || '?';
+  return l.id;
+}
+
+async function buy(listingId, isMine) {
+  let qty = null;
+  if (!isMine) {
+    const raw = prompt('Quantidade (deixe vazio pra tudo):');
+    if (raw) {
+      qty = parseInt(raw, 10);
+      if (Number.isNaN(qty) || qty <= 0) {
+        showError('Quantidade inválida.');
+        return;
+      }
+    }
+  }
+  const body = { listing_id: listingId, pin: pin() };
+  if (qty) body.qty = qty;
+
+  const endpoint = isMine ? 'cancel' : 'buy';
+  try {
+    const data = await apiCall(`${API}/board/${encodeURIComponent(clan())}/${endpoint}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    showError(null);
+    alert(data.message || 'Feito.');
+  } catch {
+    return; // error already shown
+  }
+  loadBoard();
+}
+
+function renderNewPostFields() {
+  const cat = document.getElementById('newCategory').value;
+  const div = document.getElementById('newFields');
+  const templates = {
+    Mercado: `
+      <label>Item</label><input id="f_item_name">
+      <label>Quantidade</label><input id="f_quantity" type="number" value="1">
+      <label>Tipo</label>
+      <select id="f_item_type">
+        <option>Material</option><option>Consumível</option><option>Ferramenta</option>
+        <option>Flecha</option><option>Extrato</option><option>Comida</option><option>Equipamento</option>
+      </select>`,
+    Contratar: `<label>Nome do Aventureiro</label><input id="f_adventurer_name">`,
+    Informação: `<label>Título</label><input id="f_title"><label>Conteúdo</label><input id="f_content">`,
+    Benfeitorias: `<label>Título</label><input id="f_title"><label>Descrição</label><input id="f_description">`,
+  };
+  div.innerHTML = templates[cat];
+}
+
+async function submitPost() {
+  const cat = document.getElementById('newCategory').value;
+  const fields = {};
+  document.querySelectorAll('#newFields [id^="f_"]').forEach(el => {
+    const key = el.id.slice(2);
+    fields[key] = el.type === 'number' ? parseInt(el.value, 10) : el.value;
+  });
+  const body = {
+    category: cat,
+    price: parseInt(document.getElementById('newPrice').value, 10) || 0,
+    target_clan: document.getElementById('newTarget').value || null,
+    fields,
+    pin: pin(),
+  };
+  try {
+    await apiCall(`${API}/board/${encodeURIComponent(clan())}/post`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    return; // error already shown
+  }
+  loadBoard();
+}
+
+renderNewPostFields();
+</script>
+
+</body>
+</html>
