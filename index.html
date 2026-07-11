@@ -2,66 +2,165 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Quadro de Avisos</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Plano de Expedição</title>
 <style>
-  :root { --bg: #171410; --panel: #24201a; --accent: #c9a35a; --text: #eee5d3; --muted: #9a8f78; }
-  * { box-sizing: border-box; }
-  body { background: var(--bg); color: var(--text); font-family: Georgia, serif; margin: 0; padding: 24px; }
-  h1 { color: var(--accent); border-bottom: 1px solid var(--accent); padding-bottom: 8px; }
-  .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; }
-  select, input, button { background: var(--panel); color: var(--text); border: 1px solid var(--muted); padding: 6px 10px; border-radius: 4px; font-family: inherit; }
-  button { cursor: pointer; background: var(--accent); color: #1a1a1a; font-weight: bold; border: none; }
-  button:hover { opacity: 0.85; }
+  :root {
+    --bg: #171410; --panel: #24201a; --accent: #c9a35a; --text: #eee5d3; --muted: #9a8f78;
+    --pill-blue: #d7e3f7; --pill-blue-text: #1a2a44;
+    --pill-green: #d9f0da; --pill-green-text: #1a3a1c;
+    --pill-filled: #f4c896; --pill-filled-text: #4a2c0a;
+    --banner-bg: #111; --banner-text: #fff;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { font-size: 17px; } /* keeps inputs >=16px so iOS Safari won't auto-zoom on focus */
+  body { background: var(--bg); color: var(--text); font-family: Georgia, serif; margin: 0; padding: 16px; line-height: 1.4; }
+  h1 { color: var(--accent); border-bottom: 1px solid var(--accent); padding-bottom: 10px; font-size: 1.4rem; margin: 0 0 16px; }
+
+  select, input, button {
+    font-family: inherit; font-size: 0.95rem; min-height: 44px; width: 100%; border-radius: 20px;
+    border: none; padding: 10px 14px;
+  }
+  button { cursor: pointer; background: var(--accent); color: #1a1a1a; font-weight: bold; border-radius: 8px; }
+  button:hover, button:active { opacity: 0.85; }
+  label { display: block; margin: 10px 0 4px; font-size: 0.85rem; color: var(--muted); }
+
+  /* Section banner — black bar with bold centered white text, like the sheet's
+     section headers ("com as habilidades", "o equipamento", "para explorar", etc). */
+  .banner {
+    background: var(--banner-bg); color: var(--banner-text); font-weight: bold; text-align: center;
+    padding: 10px 8px; border-radius: 6px; margin: 10px 0 8px; font-size: 0.95rem;
+  }
+
+  /* Dropdown "pills" — rounded, light-colored selects matching the sheet's look. */
+  .pill { background: var(--pill-blue); color: var(--pill-blue-text); }
+  .pill.filled { background: var(--pill-filled); color: var(--pill-filled-text); }
+  .pill-green { background: var(--pill-green); color: var(--pill-green-text); }
+
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
+  .grid-2col { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-bottom: 8px; }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+  .toolbar > label { flex: 1 1 140px; margin: 0; display: flex; flex-direction: column; gap: 4px; color: var(--muted); }
+  .toolbar .status { display: flex; gap: 14px; font-size: 0.95rem; }
   .gold { color: var(--accent); font-weight: bold; }
-  .categories { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
-  .category { background: var(--panel); border: 1px solid #3a3428; border-radius: 8px; padding: 14px; }
-  .category h2 { margin-top: 0; font-size: 1.1em; color: var(--accent); }
-  .listing { border-top: 1px solid #3a3428; padding: 8px 0; font-size: 0.92em; }
+  .toolbar button { flex: 1 1 100%; border-radius: 8px; }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tabs button { background: var(--panel); color: var(--muted); border: 1px solid #3a3428; flex: 1; border-radius: 8px; }
+  .tabs button.active { background: var(--accent); color: #1a1a1a; }
+
+  .card { background: var(--panel); border-radius: 10px; padding: 14px; margin-bottom: 16px; }
+
+  .time-labels-block {
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    color: var(--accent); font-weight: bold; font-size: 0.95rem; padding: 0 6px;
+  }
+  .map-block { display: flex; gap: 10px; align-items: stretch; }
+  .map-block .rows { flex: 1; }
+
+  .x-label { display: flex; align-items: center; justify-content: center; color: var(--muted); font-weight: bold; }
+
+  .empty { color: var(--muted); font-style: italic; }
+
+  .categories { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  @media (min-width: 640px) { .categories { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); } }
+  .category { background: var(--panel); border: 1px solid #3a3428; border-radius: 10px; padding: 14px; }
+  .category h2 { margin-top: 0; font-size: 1.05rem; color: var(--accent); }
+  .listing { border-top: 1px solid #3a3428; padding: 10px 0; font-size: 0.95rem; }
   .listing:first-of-type { border-top: none; }
   .listing .price { color: var(--accent); }
-  .listing button { margin-top: 4px; font-size: 0.85em; padding: 3px 8px; }
-  .empty { color: var(--muted); font-style: italic; }
-  .new-post { margin-top: 24px; background: var(--panel); padding: 14px; border-radius: 8px; }
+  .listing button { margin-top: 6px; font-size: 0.9rem; padding: 8px 12px; width: auto; }
+
+  .new-post { background: var(--panel); padding: 16px; border-radius: 10px; margin-top: 16px; }
   .new-post h2 { color: var(--accent); margin-top: 0; }
-  .new-post label { display: block; margin: 8px 0 2px; font-size: 0.85em; color: var(--muted); }
-  .new-post input, .new-post select { width: 100%; }
+  .new-post input, .new-post select { border-radius: 8px; background: var(--panel); color: var(--text); border: 1px solid var(--muted); }
+
+  .save-bar { position: sticky; bottom: 0; padding: 12px 0; background: var(--bg); margin-top: -4px; }
+  .save-bar button { font-size: 1.05rem; padding: 14px; }
+
+  #errorBanner { background: #4a1f1f; color: #f0c0c0; padding: 12px 14px; border-radius: 8px; margin-bottom: 14px; }
 </style>
 </head>
 <body>
 
-<h1>Quadro de Avisos</h1>
+<h1>Plano de Expedição</h1>
 
 <div class="toolbar">
-  <label>Clã: <input id="clanName" value="Pé de Alface"></label>
-  <label>PIN: <input id="clanPin" type="password" maxlength="4" placeholder="0000"></label>
-  <span>Ouro: <span class="gold" id="goldDisplay">—</span></span>
-  <span>Dia: <span id="dayDisplay">—</span></span>
-  <button onclick="loadBoard()">Entrar / Atualizar</button>
+  <label>Clã <input id="clanName" value="Pé de Alface" style="border-radius:8px; background:var(--panel); color:var(--text); border:1px solid var(--muted);"></label>
+  <label>PIN <input id="clanPin" type="password" maxlength="4" placeholder="0000" style="border-radius:8px; background:var(--panel); color:var(--text); border:1px solid var(--muted);"></label>
+  <div class="status">
+    <span>Ouro: <span class="gold" id="goldDisplay">—</span></span>
+    <span>Dia: <span id="dayDisplay">—</span></span>
+  </div>
+  <button onclick="enterGame()">Entrar / Atualizar</button>
 </div>
-<div id="errorBanner" style="display:none; background:#4a1f1f; color:#f0c0c0; padding:8px 12px; border-radius:4px; margin-bottom:14px;"></div>
+<div id="errorBanner" style="display:none"></div>
 
-<div class="categories" id="categories"></div>
-
-<div class="new-post">
-  <h2>Nova Postagem</h2>
-  <label>Categoria</label>
-  <select id="newCategory" onchange="renderNewPostFields()">
-    <option value="Mercado">Mercado</option>
-    <option value="Contratar">Contratar</option>
-    <option value="Informação">Informação</option>
-    <option value="Benfeitorias">Benfeitorias</option>
-  </select>
-  <div id="newFields"></div>
-  <label>Preço (g)</label>
-  <input id="newPrice" type="number" value="0">
-  <label>Alvo (opcional — deixe vazio pra público)</label>
-  <input id="newTarget" placeholder="nome do clã">
-  <button style="margin-top:10px" onclick="submitPost()">Publicar</button>
+<div class="tabs">
+  <button id="tabExpeditionBtn" class="active" onclick="showTab('expedition')">Plano de Expedição</button>
+  <button id="tabBoardBtn" onclick="showTab('board')">Quadro de Avisos</button>
 </div>
+
+<!-- ================= EXPEDITION TAB (default) ================= -->
+<div id="expeditionTab">
+  <div id="expeditionCharacters"></div>
+
+  <div class="card" id="mapCard">
+    <div class="banner">para explorar</div>
+    <div class="map-block">
+      <div class="rows" id="mapSteps"></div>
+      <div class="time-labels-block">de manhã,<br>de tarde e<br>de noite.</div>
+    </div>
+    <div class="banner">Com as instruções</div>
+    <div class="grid-3" id="expeditionInstructions"></div>
+  </div>
+
+  <div class="card" id="townCard">
+    <div class="banner">E durante a expedição, o aventureiro</div>
+    <select id="townCharacter" class="pill"><option value="">---</option></select>
+    <div class="banner">ficará no clã com os ítens</div>
+    <div id="townMaterials"></div>
+    <div class="banner">Além disso, durante esse dia quero que</div>
+    <input id="extraNote" list="instructionsList" placeholder="…" class="pill" onchange="updateExtraNote(this.value)">
+  </div>
+
+  <div class="save-bar">
+    <button onclick="saveExpeditionPlan()">Salvar Plano de Expedição</button>
+  </div>
+</div>
+
+<!-- ================= BOARD TAB (secondary) ================= -->
+<div id="boardTab" style="display:none">
+  <div class="categories" id="categories"></div>
+
+  <div class="new-post">
+    <h2>Nova Postagem</h2>
+    <label>Categoria</label>
+    <select id="newCategory" onchange="renderNewPostFields()">
+      <option value="Mercado">Mercado</option>
+      <option value="Informação">Informação</option>
+      <option value="Benfeitorias">Benfeitorias</option>
+    </select>
+    <div id="newFields"></div>
+    <label>Preço (g)</label>
+    <input id="newPrice" type="number" value="0">
+    <label>Alvo (opcional — deixe vazio pra público)</label>
+    <input id="newTarget" placeholder="nome do clã">
+    <button style="margin-top:14px" onclick="submitPost()">Publicar</button>
+  </div>
+</div>
+
+<!-- mapNamesList / instructionsList are empty for now — main.py's real
+     Maps.json/Instrucoes.json weren't available when this was built, so
+     there's no fixed vocabulary to seed them with yet. Using <input list>
+     so typing still works even before real option lists exist. -->
+<datalist id="mapNamesList"></datalist>
+<datalist id="instructionsList"></datalist>
 
 <script>
 // Change this to your Fly.io URL once deployed, e.g. "https://quadro-de-avisos.fly.dev"
-const API = "https://quadro-de-avisos.fly.dev";
+const API = "http://localhost:8000";
 
 function clan() { return document.getElementById('clanName').value; }
 function pin() { return document.getElementById('clanPin').value; }
@@ -93,25 +192,51 @@ async function apiCall(url, options = {}) {
   return data;
 }
 
-async function loadBoard() {
+// ---------------------------------------------------------------------------
+// Login / tabs
+// ---------------------------------------------------------------------------
+
+async function enterGame() {
   try {
-    // Verify the PIN first so a wrong PIN shows up clearly, not buried in a 403
-    // the next time the player tries to buy something.
-    await apiCall(`${API}/clans/${encodeURIComponent(clan())}/login`, {
+    const loginData = await apiCall(`${API}/clans/${encodeURIComponent(clan())}/login`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pin: pin() }),
     });
+    document.getElementById('goldDisplay').textContent = loginData.gold ?? '—';
   } catch {
-    return; // error already shown by apiCall
+    return;
   }
+  await loadExpeditionTab();
+  await refreshDay();
+}
 
+async function refreshDay() {
+  try {
+    const data = await apiCall(`${API}/board/${encodeURIComponent(clan())}`);
+    document.getElementById('dayDisplay').textContent = data.world_day;
+    document.getElementById('goldDisplay').textContent = data.clan_gold ?? '—';
+  } catch { /* non-fatal */ }
+}
+
+function showTab(tab) {
+  document.getElementById('boardTab').style.display = tab === 'board' ? 'block' : 'none';
+  document.getElementById('expeditionTab').style.display = tab === 'expedition' ? 'block' : 'none';
+  document.getElementById('tabBoardBtn').classList.toggle('active', tab === 'board');
+  document.getElementById('tabExpeditionBtn').classList.toggle('active', tab === 'expedition');
+  if (tab === 'board') loadBoard();
+}
+
+// ---------------------------------------------------------------------------
+// Quadro de Avisos (secondary tab)
+// ---------------------------------------------------------------------------
+
+async function loadBoard() {
   let data;
   try {
     data = await apiCall(`${API}/board/${encodeURIComponent(clan())}`);
   } catch {
     return;
   }
-
   document.getElementById('goldDisplay').textContent = data.clan_gold ?? '—';
   document.getElementById('dayDisplay').textContent = data.world_day;
 
@@ -139,8 +264,7 @@ async function loadBoard() {
 }
 
 function describeListing(l) {
-  if (l.category === 'Mercado') return `${l.item_name} (${l.quantity} disponível)`;
-  if (l.category === 'Contratar') return l.adventurer_name || '?';
+  if (l.category === 'Mercado') return `${l.item_name} (${l.item_type === 'Aventureiro' ? 'aventureiro' : l.quantity + ' disponível'})`;
   if (l.category === 'Informação') return l.title || '?';
   if (l.category === 'Benfeitorias') return l.title || '?';
   return l.id;
@@ -170,37 +294,107 @@ async function buy(listingId, isMine) {
     showError(null);
     alert(data.message || 'Feito.');
   } catch {
-    return; // error already shown
+    return;
   }
   loadBoard();
 }
 
-function renderNewPostFields() {
+async function renderNewPostFields() {
   const cat = document.getElementById('newCategory').value;
   const div = document.getElementById('newFields');
-  const templates = {
-    Mercado: `
-      <label>Item</label><input id="f_item_name">
-      <label>Quantidade</label><input id="f_quantity" type="number" value="1">
+
+  if (cat === 'Mercado') {
+    // Roster data (real item/character names) is needed to populate the
+    // dropdowns — fetch it if we don't already have it cached (e.g. from
+    // visiting the Expedition tab already).
+    if (roster.characters.length === 0 && roster.items.length === 0) {
+      try {
+        roster = await apiCall(`${API}/clans/${encodeURIComponent(clan())}/roster`);
+      } catch {
+        roster = { characters: [], items: [] };
+      }
+    }
+    div.innerHTML = `
       <label>Tipo</label>
-      <select id="f_item_type">
-        <option>Material</option><option>Consumível</option><option>Ferramenta</option>
-        <option>Flecha</option><option>Extrato</option><option>Comida</option><option>Equipamento</option>
-      </select>`,
-    Contratar: `<label>Nome do Aventureiro</label><input id="f_adventurer_name">`,
+      <select id="f_market_type" onchange="renderMarketItemOptions()">
+        <option value="Equipamento">Equipamento</option>
+        <option value="Materiais">Materiais</option>
+        <option value="Aventureiros">Aventureiros</option>
+      </select>
+      <label>Item</label>
+      <select id="f_item_name"></select>
+      <div id="marketQuantityRow">
+        <label>Quantidade</label>
+        <input id="f_quantity" type="number" value="1" min="1">
+      </div>
+    `;
+    renderMarketItemOptions();
+    return;
+  }
+
+  const templates = {
     Informação: `<label>Título</label><input id="f_title"><label>Conteúdo</label><input id="f_content">`,
-    Benfeitorias: `<label>Título</label><input id="f_title"><label>Descrição</label><input id="f_description">`,
+    Benfeitorias: `
+      <label>Título</label>
+      <select id="f_title">${optionsHtml(BENFEITORIA_TITLE_OPTIONS, '')}</select>
+      <label>Descrição</label>
+      <select id="f_description">${optionsHtml(BENFEITORIA_DESCRIPTION_OPTIONS, '')}</select>`,
   };
   div.innerHTML = templates[cat];
 }
 
+// Equipamento = unique items (Item.quantity is null in the DB, e.g. weapons/armor
+// instances like "Esgrima#001"). Materiais = stackable items (Item.quantity is
+// set). Aventureiros = the clan's actual characters — buying one now really
+// transfers the Character row (board.py's Mercado purchase logic handles the
+// "Aventureiro" item_type specially; Contratar has been removed entirely).
+function renderMarketItemOptions() {
+  const type = document.getElementById('f_market_type').value;
+  const itemSelect = document.getElementById('f_item_name');
+  const qtyRow = document.getElementById('marketQuantityRow');
+
+  let options = [];
+  if (type === 'Equipamento') {
+    options = roster.items.filter(it => it.quantity == null).map(it => it.name);
+  } else if (type === 'Materiais') {
+    options = roster.items.filter(it => it.quantity != null).map(it => it.name);
+  } else if (type === 'Aventureiros') {
+    options = roster.characters.map(c => c.name);
+  }
+
+  itemSelect.innerHTML = options.length
+    ? options.map(o => `<option value="${o}">${o}</option>`).join('')
+    : `<option value="">— nada disponível —</option>`;
+
+  // Quantity only makes sense for stackable materials — a unique equipment
+  // instance or a character is always exactly one.
+  qtyRow.style.display = type === 'Materiais' ? 'block' : 'none';
+}
+
 async function submitPost() {
   const cat = document.getElementById('newCategory').value;
-  const fields = {};
-  document.querySelectorAll('#newFields [id^="f_"]').forEach(el => {
-    const key = el.id.slice(2);
-    fields[key] = el.type === 'number' ? parseInt(el.value, 10) : el.value;
-  });
+  let fields = {};
+
+  if (cat === 'Mercado') {
+    const marketType = document.getElementById('f_market_type').value;
+    const itemName = document.getElementById('f_item_name').value;
+    if (!itemName) { showError('Escolha um item.'); return; }
+    // Map the simplified Tipo (Equipamento/Materiais/Aventureiros) to what
+    // board.py's stackable-vs-unique logic actually checks for — "Material"
+    // is what makes it stack, anything else is treated as a unique item.
+    const backendTypeMap = { Equipamento: 'Equipamento', Materiais: 'Material', Aventureiros: 'Aventureiro' };
+    fields = {
+      item_name: itemName,
+      item_type: backendTypeMap[marketType],
+      quantity: marketType === 'Materiais' ? (parseInt(document.getElementById('f_quantity').value, 10) || 1) : 1,
+    };
+  } else {
+    document.querySelectorAll('#newFields [id^="f_"]').forEach(el => {
+      const key = el.id.slice(2);
+      fields[key] = el.type === 'number' ? parseInt(el.value, 10) : el.value;
+    });
+  }
+
   const body = {
     category: cat,
     price: parseInt(document.getElementById('newPrice').value, 10) || 0,
@@ -214,12 +408,343 @@ async function submitPost() {
       body: JSON.stringify(body),
     });
   } catch {
-    return; // error already shown
+    return;
   }
   loadBoard();
 }
 
-renderNewPostFields();
+// renderNewPostFields() is called at the bottom of the script instead of here,
+// since it reads `roster`, which isn't declared until the Expedition Plan
+// section below — calling it this early would hit the same temporal-dead-zone
+// bug the expeditionState initial-render had.
+
+// ---------------------------------------------------------------------------
+// Expedition Plan
+//
+// Layout/field counts mirror the original spreadsheet template exactly:
+//   - per character: 6 ability dropdown slots, 6 equipment dropdown slots,
+//     3 instruction slots (main.py's parser only uses the first 3 abilities
+//     and first 6 equipment it finds — extra ability slots are harmless
+//     spares, same as in the original sheet)
+//   - map/time section: always 3 rows (Manhã/Tarde/Noite, fixed order)
+//   - "Com as instruções": 3 general instruction slots
+//   - town/crafting: always 5 material rows
+//   - "Além disso...": one extra free-form note appended after the 3
+//     general instructions
+// ---------------------------------------------------------------------------
+
+const ABILITY_SLOTS = 6;
+const EQUIPMENT_SLOTS = 6;
+const INSTRUCTION_SLOTS = 3;
+const GENERAL_INSTRUCTION_SLOTS = 3;
+const MATERIAL_SLOTS = 5;
+const TIMES_OF_DAY = ['Manhã', 'Tarde', 'Noite'];
+// Empty until main.py's real Instrucoes.json (or the AyaIA knowledge-base file
+// documenting valid In/Ie instructions) is available — these are proper <select>
+// dropdowns now, so until real values exist here, they'll only offer "---".
+const INSTRUCTION_OPTIONS = [];
+// Same situation for Benfeitorias — no real fixed vocabulary was provided yet,
+// so these dropdowns are structurally correct but empty until populated.
+const BENFEITORIA_TITLE_OPTIONS = [];
+const BENFEITORIA_DESCRIPTION_OPTIONS = [];
+
+let roster = { characters: [], items: [] };
+let expeditionState = {
+  characters: [null, null, null], // each: {name, abilities:[6], equipment:[6], instructions:[3]}
+  map_steps: TIMES_OF_DAY.map(t => ({ map: '', floor: 1, time: t })),
+  expedition_instructions: ['', '', ''],
+  extra_note: '',
+  town: null, // {character, materials: [[name, qty], ...5]}
+};
+
+function emptyCharSlot(name) {
+  return {
+    name,
+    abilities: Array(ABILITY_SLOTS).fill(''),
+    equipment: Array(EQUIPMENT_SLOTS).fill(''),
+    instructions: Array(INSTRUCTION_SLOTS).fill(''),
+  };
+}
+
+async function loadExpeditionTab() {
+  try {
+    roster = await apiCall(`${API}/clans/${encodeURIComponent(clan())}/roster`);
+  } catch {
+    return;
+  }
+
+  const mapList = document.getElementById('mapNamesList');
+  // No real Maps.json data available yet — left empty on purpose, see comment above.
+  mapList.innerHTML = '';
+
+  let saved;
+  try {
+    saved = await apiCall(`${API}/expedition/${encodeURIComponent(clan())}`);
+  } catch {
+    saved = {};
+  }
+
+  const chars = (saved.characters || []).slice(0, 3).map(c => {
+    const slot = emptyCharSlot(c.name);
+    (c.abilities || []).slice(0, ABILITY_SLOTS).forEach((a, i) => slot.abilities[i] = a);
+    (c.equipment || []).slice(0, EQUIPMENT_SLOTS).forEach((e, i) => slot.equipment[i] = e);
+    (c.instructions || []).slice(0, INSTRUCTION_SLOTS).forEach((ins, i) => slot.instructions[i] = ins);
+    return slot;
+  });
+  while (chars.length < 3) chars.push(null);
+
+  const savedSteps = saved.map_steps || [];
+  const mapSteps = TIMES_OF_DAY.map(t => {
+    const found = savedSteps.find(s => s.time === t);
+    return found ? { map: found.map || '', floor: found.floor || 1, time: t } : { map: '', floor: 1, time: t };
+  });
+
+  // First 3 saved general instructions go in the fixed "Com as instruções" slots;
+  // anything beyond that (or a 4th item) becomes the "Além disso..." note.
+  const savedInstr = saved.expedition_instructions || [];
+  const generalInstr = savedInstr.slice(0, GENERAL_INSTRUCTION_SLOTS);
+  while (generalInstr.length < GENERAL_INSTRUCTION_SLOTS) generalInstr.push('');
+  const extraNote = savedInstr.slice(GENERAL_INSTRUCTION_SLOTS).join('; ');
+
+  let town = saved.town || null;
+  if (town) {
+    const materials = (town.materials || []).slice(0, MATERIAL_SLOTS);
+    while (materials.length < MATERIAL_SLOTS) materials.push(['', 1]);
+    town = { character: town.character, materials };
+  }
+
+  expeditionState = {
+    characters: chars, map_steps: mapSteps,
+    expedition_instructions: generalInstr, extra_note: extraNote, town,
+  };
+  renderExpeditionTab();
+}
+
+function renderExpeditionTab() {
+  renderExpeditionCharacters();
+  renderMapSteps();
+  renderExpeditionInstructions();
+  renderTownSection();
+  document.getElementById('extraNote').value = expeditionState.extra_note || '';
+  document.getElementById('instructionsList').innerHTML =
+    INSTRUCTION_OPTIONS.map(o => `<option value="${o}">`).join('');
+}
+
+function optionsHtml(options, current) {
+  const opts = ['<option value="">---</option>'].concat(
+    options.map(o => `<option value="${o}" ${o === current ? 'selected' : ''}>${o}</option>`)
+  );
+  return opts.join('');
+}
+
+function renderExpeditionCharacters() {
+  const container = document.getElementById('expeditionCharacters');
+  container.innerHTML = '';
+  for (let slot = 0; slot < 3; slot++) {
+    const entry = expeditionState.characters[slot];
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const charOptions = roster.characters.map(c =>
+      `<option value="${c.name}" ${entry && entry.name === c.name ? 'selected' : ''}>${c.name}</option>`
+    ).join('');
+
+    card.innerHTML = `
+      <div class="banner">O clã ${clan()} enviou o aventureiro</div>
+      <select class="pill ${entry ? 'filled' : ''}" onchange="setCharSlotName(${slot}, this.value)">
+        <option value="">---</option>
+        ${charOptions}
+      </select>
+      <div id="charBody${slot}"></div>
+    `;
+    container.appendChild(card);
+    if (entry) renderCharBody(slot);
+  }
+}
+
+function setCharSlotName(slot, name) {
+  expeditionState.characters[slot] = name ? emptyCharSlot(name) : null;
+  renderExpeditionCharacters();
+}
+
+function renderCharBody(slot) {
+  const entry = expeditionState.characters[slot];
+  const rosterChar = roster.characters.find(c => c.name === entry.name);
+  const known = (rosterChar && rosterChar.known_abilities) || [];
+  const itemNames = roster.items.map(it => it.quantity != null ? `${it.name} (x${it.quantity})` : it.name);
+  const itemValueFor = (label) => label.replace(/ \(x\d+\)$/, '');
+
+  const body = document.getElementById(`charBody${slot}`);
+  if (!body) return;
+
+  const abilityCells = entry.abilities.map((val, i) => `
+    <select class="pill ${val ? 'filled' : ''}" onchange="setAbility(${slot}, ${i}, this.value)">
+      ${optionsHtml(known, val)}
+    </select>`).join('');
+
+  const equipmentCells = entry.equipment.map((val, i) => {
+    const labelForVal = val ? (itemNames.find(l => itemValueFor(l) === val) || val) : '';
+    return `
+    <select class="pill ${val ? 'filled' : ''}" onchange="setEquipmentSlot(${slot}, ${i}, this.options[this.selectedIndex].dataset.value || '')">
+      <option value="">---</option>
+      ${itemNames.map(l => `<option value="${l}" data-value="${itemValueFor(l)}" ${itemValueFor(l) === val ? 'selected' : ''}>${l}</option>`).join('')}
+    </select>`;
+  }).join('');
+
+  const instructionCells = entry.instructions.map((val, i) => `
+    <select class="pill ${val ? 'filled' : ''}" onchange="setInstruction(${slot}, ${i}, this.value)">
+      ${optionsHtml(INSTRUCTION_OPTIONS, val)}
+    </select>`).join('');
+
+  body.innerHTML = `
+    <div class="banner">com as habilidades</div>
+    <div class="grid-3">${abilityCells}</div>
+    <div class="banner">o equipamento</div>
+    <div class="grid-3">${equipmentCells}</div>
+    <div class="banner">e as instruções</div>
+    <div class="grid-3">${instructionCells}</div>
+  `;
+}
+
+function setAbility(slot, i, value) {
+  expeditionState.characters[slot].abilities[i] = value;
+  renderCharBody(slot);
+}
+function setEquipmentSlot(slot, i, value) {
+  expeditionState.characters[slot].equipment[i] = value;
+  renderCharBody(slot);
+}
+function setInstruction(slot, i, value) {
+  expeditionState.characters[slot].instructions[i] = value;
+}
+
+function renderMapSteps() {
+  const div = document.getElementById('mapSteps');
+  div.innerHTML = '';
+  expeditionState.map_steps.forEach((step, idx) => {
+    const row = document.createElement('div');
+    row.className = 'grid-2col';
+    const floorOptions = [1, 2, 3, 4, 5, 6].map(f =>
+      `<option value="${f}" ${step.floor === f ? 'selected' : ''}>${f}</option>`).join('');
+    row.innerHTML = `
+      <input class="pill ${step.map ? 'filled' : ''}" list="mapNamesList" value="${(step.map || '').replace(/"/g, '&quot;')}"
+             placeholder="Mapa" onchange="updateMapStep(${idx}, 'map', this.value)">
+      <select class="pill" onchange="updateMapStep(${idx}, 'floor', this.value)">${floorOptions}</select>
+    `;
+    div.appendChild(row);
+  });
+}
+function updateMapStep(idx, field, value) {
+  expeditionState.map_steps[idx][field] = field === 'floor' ? parseInt(value, 10) || 1 : value;
+}
+
+function renderExpeditionInstructions() {
+  const div = document.getElementById('expeditionInstructions');
+  div.innerHTML = '';
+  for (let idx = 0; idx < GENERAL_INSTRUCTION_SLOTS; idx++) {
+    const val = expeditionState.expedition_instructions[idx] || '';
+    div.innerHTML += `
+      <select class="pill ${val ? 'filled' : ''}" onchange="updateExpeditionInstruction(${idx}, this.value)">
+        ${optionsHtml(INSTRUCTION_OPTIONS, val)}
+      </select>`;
+  }
+}
+function updateExpeditionInstruction(idx, value) {
+  expeditionState.expedition_instructions[idx] = value;
+}
+function updateExtraNote(value) {
+  expeditionState.extra_note = value;
+}
+
+function renderTownSection() {
+  const select = document.getElementById('townCharacter');
+  const currentChar = expeditionState.town ? expeditionState.town.character : '';
+  select.innerHTML = optionsHtml(roster.characters.map(c => c.name), currentChar);
+  select.className = `pill ${currentChar ? 'filled' : ''}`;
+  select.onchange = () => {
+    if (!select.value) {
+      expeditionState.town = null;
+    } else {
+      const materials = Array.from({ length: MATERIAL_SLOTS }, (_, i) =>
+        (expeditionState.town && expeditionState.town.materials[i]) || ['', 1]);
+      expeditionState.town = { character: select.value, materials };
+    }
+    renderTownSection();
+  };
+
+  const matDiv = document.getElementById('townMaterials');
+  matDiv.innerHTML = '';
+  const materials = expeditionState.town ? expeditionState.town.materials : Array(MATERIAL_SLOTS).fill(['', 1]);
+  const itemNames = roster.items.map(it => it.name);
+  const itemByName = {};
+  roster.items.forEach(it => { itemByName[it.name] = it; });
+  for (let idx = 0; idx < MATERIAL_SLOTS; idx++) {
+    const mat = materials[idx] || ['', 1];
+    // Cap available quantity to what the clan actually has of the selected item —
+    // unique items (quantity === null, e.g. a specific sword) only have 1 to give;
+    // stackable materials cap at however many the clan actually owns.
+    const selectedItem = itemByName[mat[0]];
+    const maxQty = selectedItem ? (selectedItem.quantity ?? 1) : 20;
+    const qtyOptions = Array.from({ length: Math.max(maxQty, 1) }, (_, i) => i + 1)
+      .map(q => `<option value="${q}" ${mat[1] === q ? 'selected' : ''}>${q}</option>`).join('');
+    const row = document.createElement('div');
+    row.style.cssText = 'display:grid; grid-template-columns: 2fr auto 1fr; gap:8px; margin-bottom:8px; align-items:center;';
+    row.innerHTML = `
+      <select class="pill-green ${mat[0] ? 'filled' : ''}" onchange="updateTownMaterial(${idx}, 0, this.value)">
+        ${optionsHtml(itemNames, mat[0])}
+      </select>
+      <span class="x-label">x</span>
+      <select class="pill-green" onchange="updateTownMaterial(${idx}, 1, this.value)">${qtyOptions}</select>
+    `;
+    matDiv.appendChild(row);
+  }
+}
+function updateTownMaterial(idx, field, value) {
+  if (!expeditionState.town) return;
+  expeditionState.town.materials[idx][field] = field === 1 ? (parseInt(value, 10) || 1) : value;
+  if (field === 0) renderTownSection(); // material changed — quantity cap depends on which item, refresh it
+}
+
+async function saveExpeditionPlan() {
+  const characters = expeditionState.characters
+    .filter(Boolean)
+    .map(c => ({
+      name: c.name,
+      // Backend caps abilities at 3 / equipment at 6, matching main.py's parser —
+      // truncate here so extra spare ability slots never trigger a validation error.
+      abilities: c.abilities.filter(a => a).slice(0, 3),
+      equipment: c.equipment.filter(e => e).slice(0, 6),
+      instructions: c.instructions.filter(i => i && i.trim()),
+    }));
+
+  const map_steps = expeditionState.map_steps.filter(s => s.map && s.map.trim());
+
+  const expedition_instructions = expeditionState.expedition_instructions.filter(x => x && x.trim());
+  if (expeditionState.extra_note && expeditionState.extra_note.trim()) {
+    expedition_instructions.push(expeditionState.extra_note.trim());
+  }
+
+  let town = null;
+  if (expeditionState.town && expeditionState.town.character) {
+    const materials = expeditionState.town.materials.filter(m => m[0] && m[0].trim());
+    if (materials.length > 0) town = { character: expeditionState.town.character, materials };
+  }
+
+  const body = { pin: pin(), characters, map_steps, expedition_instructions, town };
+  try {
+    await apiCall(`${API}/expedition/${encodeURIComponent(clan())}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    return;
+  }
+  alert('Plano de expedição salvo.');
+}
+
+renderExpeditionTab(); // show the 3 character windows / map / town sections immediately,
+                       // even before login — they just have empty dropdowns until then
+renderNewPostFields(); // now safe — roster is declared above
 </script>
 
 </body>
