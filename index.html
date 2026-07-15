@@ -2,165 +2,255 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Plano de Expedição</title>
+<title>Quadro de Avisos</title>
 <style>
-  :root {
-    --bg: #171410; --panel: #24201a; --accent: #c9a35a; --text: #eee5d3; --muted: #9a8f78;
-    --pill-blue: #d7e3f7; --pill-blue-text: #1a2a44;
-    --pill-green: #d9f0da; --pill-green-text: #1a3a1c;
-    --pill-filled: #f4c896; --pill-filled-text: #4a2c0a;
-    --banner-bg: #111; --banner-text: #fff;
-  }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html { font-size: 17px; } /* keeps inputs >=16px so iOS Safari won't auto-zoom on focus */
-  body { background: var(--bg); color: var(--text); font-family: Georgia, serif; margin: 0; padding: 16px; line-height: 1.4; }
-  h1 { color: var(--accent); border-bottom: 1px solid var(--accent); padding-bottom: 10px; font-size: 1.4rem; margin: 0 0 16px; }
-
-  select, input, button {
-    font-family: inherit; font-size: 0.95rem; min-height: 44px; width: 100%; border-radius: 20px;
-    border: none; padding: 10px 14px;
-  }
-  button { cursor: pointer; background: var(--accent); color: #1a1a1a; font-weight: bold; border-radius: 8px; }
-  button:hover, button:active { opacity: 0.85; }
-  label { display: block; margin: 10px 0 4px; font-size: 0.85rem; color: var(--muted); }
-
-  /* Section banner — black bar with bold centered white text, like the sheet's
-     section headers ("com as habilidades", "o equipamento", "para explorar", etc). */
-  .banner {
-    background: var(--banner-bg); color: var(--banner-text); font-weight: bold; text-align: center;
-    padding: 10px 8px; border-radius: 6px; margin: 10px 0 8px; font-size: 0.95rem;
-  }
-
-  /* Dropdown "pills" — rounded, light-colored selects matching the sheet's look. */
-  .pill { background: var(--pill-blue); color: var(--pill-blue-text); }
-  .pill.filled { background: var(--pill-filled); color: var(--pill-filled-text); }
-  .pill-green { background: var(--pill-green); color: var(--pill-green-text); }
-
-  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
-  .grid-2col { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-bottom: 8px; }
-
-  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
-  .toolbar > label { flex: 1 1 140px; margin: 0; display: flex; flex-direction: column; gap: 4px; color: var(--muted); }
-  .toolbar .status { display: flex; gap: 14px; font-size: 0.95rem; }
+  :root { --bg: #171410; --panel: #24201a; --accent: #c9a35a; --text: #eee5d3; --muted: #9a8f78; }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: Georgia, serif; margin: 0; padding: 24px; }
+  h1 { color: var(--accent); border-bottom: 1px solid var(--accent); padding-bottom: 8px; }
+  .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; }
+  select, input, button { background: var(--panel); color: var(--text); border: 1px solid var(--muted); padding: 6px 10px; border-radius: 4px; font-family: inherit; }
+  button { cursor: pointer; background: var(--accent); color: #1a1a1a; font-weight: bold; border: none; }
+  button:hover { opacity: 0.85; }
   .gold { color: var(--accent); font-weight: bold; }
-  .toolbar button { flex: 1 1 100%; border-radius: 8px; }
-
-  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-  .tabs button { background: var(--panel); color: var(--muted); border: 1px solid #3a3428; flex: 1; border-radius: 8px; }
-  .tabs button.active { background: var(--accent); color: #1a1a1a; }
-
-  .card { background: var(--panel); border-radius: 10px; padding: 14px; margin-bottom: 16px; }
-
-  .time-labels-block {
-    display: flex; align-items: center; justify-content: center; text-align: center;
-    color: var(--accent); font-weight: bold; font-size: 0.95rem; padding: 0 6px;
-  }
-  .map-block { display: flex; gap: 10px; align-items: stretch; }
-  .map-block .rows { flex: 1; }
-
-  .x-label { display: flex; align-items: center; justify-content: center; color: var(--muted); font-weight: bold; }
-
-  .empty { color: var(--muted); font-style: italic; }
-
-  .categories { display: grid; grid-template-columns: 1fr; gap: 14px; }
-  @media (min-width: 640px) { .categories { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); } }
-  .category { background: var(--panel); border: 1px solid #3a3428; border-radius: 10px; padding: 14px; }
-  .category h2 { margin-top: 0; font-size: 1.05rem; color: var(--accent); }
-  .listing { border-top: 1px solid #3a3428; padding: 10px 0; font-size: 0.95rem; }
+  .categories { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .category { background: var(--panel); border: 1px solid #3a3428; border-radius: 8px; padding: 14px; }
+  .category h2 { margin-top: 0; font-size: 1.1em; color: var(--accent); }
+  .listing { border-top: 1px solid #3a3428; padding: 8px 0; font-size: 0.92em; }
   .listing:first-of-type { border-top: none; }
   .listing .price { color: var(--accent); }
-  .listing button { margin-top: 6px; font-size: 0.9rem; padding: 8px 12px; width: auto; }
-
-  .new-post { background: var(--panel); padding: 16px; border-radius: 10px; margin-top: 16px; }
+  .listing button { margin-top: 4px; font-size: 0.85em; padding: 3px 8px; }
+  .empty { color: var(--muted); font-style: italic; }
+  .new-post { margin-top: 24px; background: var(--panel); padding: 14px; border-radius: 8px; }
   .new-post h2 { color: var(--accent); margin-top: 0; }
-  .new-post input, .new-post select { border-radius: 8px; background: var(--panel); color: var(--text); border: 1px solid var(--muted); }
+  .new-post label { display: block; margin: 8px 0 2px; font-size: 0.85em; color: var(--muted); }
+  .new-post input, .new-post select { width: 100%; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tabs button { background: var(--panel); color: var(--muted); border: 1px solid #3a3428; }
+  .tabs button.active { background: var(--accent); color: #1a1a1a; }
+  .char-card { background: var(--panel); border: 1px solid #3a3428; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+  .char-card h3 { color: var(--accent); margin-top: 0; }
+  .char-card label { display: block; margin: 8px 0 2px; font-size: 0.85em; color: var(--muted); }
+  .chip-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .chip { padding: 4px 10px; border: 1px solid var(--muted); border-radius: 12px; cursor: pointer; font-size: 0.85em; }
+  .chip.selected { background: var(--accent); color: #1a1a1a; border-color: var(--accent); }
+  .map-step-row { display: flex; gap: 8px; margin-bottom: 6px; align-items: center; }
+  .map-step-row input, .map-step-row select { flex: 1; }
+  .remove-btn { background: #4a1f1f; color: #f0c0c0; padding: 4px 8px; font-size: 0.8em; }
+  .section { background: var(--panel); border-radius: 8px; padding: 14px; margin-bottom: 16px; }
+  .section h2 { color: var(--accent); margin-top: 0; }
+  .announcements { background: var(--panel); border: 1px solid var(--accent); border-radius: 8px; padding: 14px; margin-bottom: 16px; }
+  .announcements h2 { color: var(--accent); margin-top: 0; }
+  .announcement { border-top: 1px solid #3a3428; padding: 10px 0; }
+  .announcement:first-of-type { border-top: none; padding-top: 0; }
+  .announcement .ann-meta { color: var(--muted); font-size: 0.8em; margin-top: 4px; }
+  .announcement .ann-target { color: var(--accent); }
+  .announcement img { max-width: 100%; border-radius: 6px; margin-top: 8px; display: block; }
+  .expedition-logs { background: var(--panel); border-radius: 8px; padding: 14px; margin-bottom: 16px; }
+  .expedition-logs h2 { color: var(--accent); margin-top: 0; }
+  .log-entry { border-top: 1px solid #3a3428; padding: 8px 0; font-size: 0.92em; }
+  .log-entry:first-of-type { border-top: none; }
+  .log-entry .log-meta { color: var(--muted); font-size: 0.8em; }
 
-  .save-bar { position: sticky; bottom: 0; padding: 12px 0; background: var(--bg); margin-top: -4px; }
-  .save-bar button { font-size: 1.05rem; padding: 14px; }
+  .listing .title { font-weight: bold; color: var(--text); }
+  .listing .stats { margin-top: 4px; font-size: 0.85em; color: var(--muted); }
+  .listing .stat-chip { display: inline-block; background: #1c1912; border: 1px solid #3a3428; border-radius: 4px; padding: 1px 6px; margin: 2px 4px 0 0; }
+  .listing .thread-tag { color: var(--accent); font-size: 0.8em; }
+  .listing textarea { width: 100%; background: var(--panel); color: var(--text); border: 1px solid var(--muted); border-radius: 4px; padding: 6px; font-family: inherit; margin-top: 6px; resize: vertical; min-height: 42px; }
+  .reply-box { margin-top: 8px; display: none; }
+  .reply-box.open { display: block; }
+  .inbox-section { margin-bottom: 20px; }
+  .inbox-section h3 { color: var(--accent); font-size: 1em; margin-bottom: 8px; }
+  .msg-compose { background: var(--panel); border: 1px solid #3a3428; border-radius: 8px; padding: 14px; margin-bottom: 20px; }
+  .msg-compose h2 { color: var(--accent); margin-top: 0; }
+  .msg-compose label { display: block; margin: 8px 0 2px; font-size: 0.85em; color: var(--muted); }
+  .msg-compose input, .msg-compose textarea, .msg-compose select { width: 100%; }
+  .badge { display: inline-block; background: var(--accent); color: #1a1a1a; font-size: 0.72em; font-weight: bold; border-radius: 10px; padding: 1px 8px; margin-left: 6px; }
 
-  #errorBanner { background: #4a1f1f; color: #f0c0c0; padding: 12px 14px; border-radius: 8px; margin-bottom: 14px; }
+  .top-banner { position: relative; }
+  .top-banner .close-btn { position: absolute; top: 14px; right: 14px; background: transparent; color: var(--muted); border: 1px solid var(--muted); border-radius: 4px; padding: 2px 8px; font-weight: normal; }
+  .top-banner .close-btn:hover { color: var(--text); border-color: var(--text); }
+
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  .stat-table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 0.9em; }
+  .stat-table td { padding: 2px 6px; border-bottom: 1px solid #3a3428; }
+  .stat-table td:first-child { color: var(--muted); }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .tag-row .stat-chip { margin: 0; }
+  .item-card { background: var(--panel); border: 1px solid #3a3428; border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; }
+  .item-card .title { font-weight: bold; }
+  .item-card .qty { color: var(--accent); float: right; }
+  .subtab-note { color: var(--muted); font-size: 0.85em; font-style: italic; margin: -4px 0 12px; }
+  .durability-bar { background: #1c1912; border-radius: 4px; height: 6px; margin-top: 6px; overflow: hidden; }
+  .durability-bar > div { background: var(--accent); height: 100%; }
 </style>
 </head>
 <body>
 
-<h1>Plano de Expedição</h1>
+<h1>Quadro de Avisos</h1>
 
 <div class="toolbar">
-  <label>Clã <input id="clanName" value="Pé de Alface" style="border-radius:8px; background:var(--panel); color:var(--text); border:1px solid var(--muted);"></label>
-  <label>PIN <input id="clanPin" type="password" maxlength="4" placeholder="0000" style="border-radius:8px; background:var(--panel); color:var(--text); border:1px solid var(--muted);"></label>
-  <div class="status">
-    <span>Ouro: <span class="gold" id="goldDisplay">—</span></span>
-    <span>Dia: <span id="dayDisplay">—</span></span>
-  </div>
-  <button onclick="enterGame()">Entrar / Atualizar</button>
+  <label>Clã: <input id="clanName" value="Pé de Alface"></label>
+  <label>PIN: <input id="clanPin" type="password" maxlength="4" placeholder="0000"></label>
+  <span>Ouro: <span class="gold" id="goldDisplay">—</span></span>
+  <span>Dia: <span id="dayDisplay">—</span></span>
+  <button onclick="loadBoard()">Entrar / Atualizar</button>
 </div>
-<div id="errorBanner" style="display:none"></div>
+<div id="errorBanner" style="display:none; background:#4a1f1f; color:#f0c0c0; padding:8px 12px; border-radius:4px; margin-bottom:14px;"></div>
 
 <div class="tabs">
   <button id="tabExpeditionBtn" class="active" onclick="showTab('expedition')">Plano de Expedição</button>
-  <button id="tabBoardBtn" onclick="showTab('board')">Quadro de Avisos</button>
+  <button id="tabDiaryBtn" onclick="showTab('diary')">Diário de Expedição</button>
+  <button id="tabAdventurersBtn" onclick="showTab('adventurers')">Aventureiros</button>
+  <button id="tabInventoryBtn" onclick="showTab('inventory')">Inventário</button>
+  <button id="tabRecipesBtn" onclick="showTab('recipes')">Receitas</button>
+  <button id="tabKnowledgeBtn" onclick="showTab('knowledge')">Conhecimento</button>
+  <button id="tabInboxBtn" onclick="showTab('inbox')">Caixa de Entrada<span class="badge" id="inboxBadge" style="display:none">0</span></button>
+  <button id="tabPostingsBtn" onclick="showTab('postings')">Quadro de Avisos</button>
 </div>
 
-<!-- ================= EXPEDITION TAB (default) ================= -->
+<!-- First thing on the page, open by default: latest GM announcements, then
+     tutorial messages (announcements whose title starts with "Tutorial:" —
+     there's no separate tutorial model in the backend, so that's the
+     convention GMs use), then the latest expedition log. Closeable; the
+     Diário de Expedição tab holds the same content permanently for later. -->
+<div class="top-banner" id="topBanner">
+  <button class="close-btn" onclick="document.getElementById('topBanner').style.display='none'">Fechar ✕</button>
+  <div class="announcements" id="announcementsSection" style="display:none">
+    <h2>Avisos do Mestre</h2>
+    <div id="announcementsList"></div>
+  </div>
+  <div class="expedition-logs" id="expeditionLogsSection" style="display:none">
+    <h2>Diário de Expedição</h2>
+    <div id="expeditionLogsList"></div>
+  </div>
+</div>
+
 <div id="expeditionTab">
   <div id="expeditionCharacters"></div>
 
-  <div class="card" id="mapCard">
-    <div class="banner">para explorar</div>
-    <div class="map-block">
-      <div class="rows" id="mapSteps"></div>
-      <div class="time-labels-block">de manhã,<br>de tarde e<br>de noite.</div>
-    </div>
-    <div class="banner">Com as instruções</div>
-    <div class="grid-3" id="expeditionInstructions"></div>
+  <div class="section">
+    <h2>Roteiro (Mapas)</h2>
+    <div id="mapSteps"></div>
+    <button onclick="addMapStep()">+ Adicionar Etapa</button>
   </div>
 
-  <div class="card" id="townCard">
-    <div class="banner">E durante a expedição, o aventureiro</div>
-    <select id="townCharacter" class="pill"><option value="">---</option></select>
-    <div class="banner">ficará no clã com os ítens</div>
+  <div class="section">
+    <h2>Instruções Gerais da Expedição</h2>
+    <div id="expeditionInstructions"></div>
+    <button onclick="addExpeditionInstruction()">+ Adicionar Instrução</button>
+  </div>
+
+  <div class="section">
+    <h2>Ficar no Clã (Crafting)</h2>
+    <label>Personagem (opcional)</label>
+    <select id="townCharacter"><option value="">— ninguém fica —</option></select>
     <div id="townMaterials"></div>
-    <div class="banner">Além disso, durante esse dia quero que</div>
-    <input id="extraNote" list="instructionsList" placeholder="…" class="pill" onchange="updateExtraNote(this.value)">
+    <button onclick="addTownMaterial()">+ Adicionar Material</button>
   </div>
 
-  <div class="save-bar">
-    <button onclick="saveExpeditionPlan()">Salvar Plano de Expedição</button>
+  <button style="margin-top:10px" onclick="saveExpeditionPlan()">Salvar Plano de Expedição</button>
+</div>
+
+<div id="diaryTab" style="display:none">
+  <div class="announcements" id="announcementsSection2" style="display:none">
+    <h2>Avisos do Mestre</h2>
+    <div id="announcementsList2"></div>
+  </div>
+  <div class="expedition-logs" id="expeditionLogsSection2" style="display:none">
+    <h2>Diário de Expedição</h2>
+    <div id="expeditionLogsList2"></div>
   </div>
 </div>
 
-<!-- ================= BOARD TAB (secondary) ================= -->
-<div id="boardTab" style="display:none">
-  <div class="categories" id="categories"></div>
+<div id="adventurersTab" style="display:none">
+  <div class="grid-cards" id="adventurersList"></div>
+</div>
 
-  <div class="new-post">
-    <h2>Nova Postagem</h2>
-    <label>Categoria</label>
-    <select id="newCategory" onchange="renderNewPostFields()">
-      <option value="Mercado">Mercado</option>
-      <option value="Informação">Informação</option>
-      <option value="Benfeitorias">Benfeitorias</option>
-    </select>
-    <div id="newFields"></div>
-    <label>Preço (g)</label>
-    <input id="newPrice" type="number" value="0">
-    <label>Alvo (opcional — deixe vazio pra público)</label>
-    <input id="newTarget" placeholder="nome do clã">
-    <button style="margin-top:14px" onclick="submitPost()">Publicar</button>
+<div id="inventoryTab" style="display:none">
+  <div class="section">
+    <h2>Equipamentos</h2>
+    <p class="subtab-note">Itens únicos — armas, armaduras, ferramentas com durabilidade.</p>
+    <div id="equipmentList"></div>
+  </div>
+  <div class="section">
+    <h2>Materiais</h2>
+    <p class="subtab-note">Itens empilháveis — materiais, consumíveis, flechas, comida.</p>
+    <div id="materialsList"></div>
   </div>
 </div>
 
-<!-- mapNamesList / instructionsList are empty for now — main.py's real
-     Maps.json/Instrucoes.json weren't available when this was built, so
-     there's no fixed vocabulary to seed them with yet. Using <input list>
-     so typing still works even before real option lists exist. -->
-<datalist id="mapNamesList"></datalist>
-<datalist id="instructionsList"></datalist>
+<div id="recipesTab" style="display:none">
+  <p class="subtab-note" id="recipesNote"></p>
+  <div class="grid-cards" id="recipesList"></div>
+</div>
+
+<div id="knowledgeTab" style="display:none">
+  <div class="section">
+    <h2>Habilidades Conhecidas</h2>
+    <div class="tag-row" id="knowledgeAbilities"></div>
+  </div>
+  <div class="section">
+    <h2>Mapas Descobertos</h2>
+    <p class="subtab-note" id="knowledgeMapsNote"></p>
+    <div id="knowledgeMaps"></div>
+  </div>
+  <div class="section">
+    <h2>Bestiário (Inimigos Vistos)</h2>
+    <p class="subtab-note" id="knowledgeBestiaryNote"></p>
+    <div id="knowledgeBestiary"></div>
+  </div>
+</div>
+
+<div id="inboxTab" style="display:none">
+<div class="msg-compose">
+  <h2>Mensagem Direta a um Clã</h2>
+  <label>Clã destinatário</label>
+  <input id="msgTarget" placeholder="nome do clã">
+  <label>Título</label>
+  <input id="msgTitle" placeholder="Assunto">
+  <label>Mensagem</label>
+  <textarea id="msgContent" placeholder="Escreva sua mensagem..."></textarea>
+  <button style="margin-top:10px" onclick="sendDirectMessage()">Enviar</button>
+</div>
+
+<div class="inbox-section">
+  <h3>Recebidas (endereçadas ao seu clã)</h3>
+  <div id="inboxReceived" class="categories"></div>
+</div>
+
+<div class="inbox-section">
+  <h3>Enviadas por você (endereçadas a outro clã)</h3>
+  <div id="inboxSent" class="categories"></div>
+</div>
+</div>
+
+<div id="postingsTab" style="display:none">
+<p style="color:var(--muted); font-size:0.9em; margin-top:0;">Postagens públicas do quadro — visíveis para todos os clãs. Postagens endereçadas a um clã específico aparecem na <strong>Caixa de Entrada</strong> de quem as recebeu, não aqui.</p>
+<div class="categories" id="categories"></div>
+
+<div class="new-post">
+  <h2>Nova Postagem</h2>
+  <label>Categoria</label>
+  <select id="newCategory" onchange="renderNewPostFields()">
+    <option value="Mercado">Mercado</option>
+    <option value="Informação">Informação</option>
+    <option value="Benfeitorias">Benfeitorias (Missão)</option>
+  </select>
+  <label>Título</label>
+  <input id="newTitle" placeholder="Título da postagem (obrigatório)">
+  <div id="newFields"></div>
+  <label>Preço (g)</label>
+  <input id="newPrice" type="number" value="0">
+  <label>Alvo (opcional — deixe vazio pra público, ou endereçe a um clã pra aparecer na Caixa de Entrada dele)</label>
+  <input id="newTarget" placeholder="nome do clã">
+  <button style="margin-top:10px" onclick="submitPost()">Publicar</button>
+</div>
+</div>
 
 <script>
 // Change this to your Fly.io URL once deployed, e.g. "https://quadro-de-avisos.fly.dev"
-const API = "https://quadro-de-avisos.fly.dev";
+const API = "http://localhost:8000";
 
 function clan() { return document.getElementById('clanName').value; }
 function pin() { return document.getElementById('clanPin').value; }
@@ -192,82 +282,319 @@ async function apiCall(url, options = {}) {
   return data;
 }
 
-// ---------------------------------------------------------------------------
-// Login / tabs
-// ---------------------------------------------------------------------------
-
-async function enterGame() {
+async function loadBoard() {
   try {
-    const loginData = await apiCall(`${API}/clans/${encodeURIComponent(clan())}/login`, {
+    // Verify the PIN first so a wrong PIN shows up clearly, not buried in a 403
+    // the next time the player tries to buy something.
+    await apiCall(`${API}/clans/${encodeURIComponent(clan())}/login`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pin: pin() }),
     });
-    document.getElementById('goldDisplay').textContent = loginData.gold ?? '—';
+  } catch {
+    return; // error already shown by apiCall
+  }
+
+  let data, feed;
+  try {
+    // /board/{clan} for gold/day/listings, /feed/{clan} for announcements +
+    // expedition logs (previously this page never called /feed at all, so
+    // the "on load" announcements/diary requirement silently did nothing).
+    [data, feed] = await Promise.all([
+      apiCall(`${API}/board/${encodeURIComponent(clan())}`),
+      apiCall(`${API}/feed/${encodeURIComponent(clan())}`),
+    ]);
   } catch {
     return;
   }
-  await loadExpeditionTab();
-  await refreshDay();
-}
 
-async function refreshDay() {
-  try {
-    const data = await apiCall(`${API}/board/${encodeURIComponent(clan())}`);
-    document.getElementById('dayDisplay').textContent = data.world_day;
-    document.getElementById('goldDisplay').textContent = data.clan_gold ?? '—';
-  } catch { /* non-fatal */ }
-}
-
-function showTab(tab) {
-  document.getElementById('boardTab').style.display = tab === 'board' ? 'block' : 'none';
-  document.getElementById('expeditionTab').style.display = tab === 'expedition' ? 'block' : 'none';
-  document.getElementById('tabBoardBtn').classList.toggle('active', tab === 'board');
-  document.getElementById('tabExpeditionBtn').classList.toggle('active', tab === 'expedition');
-  if (tab === 'board') loadBoard();
-}
-
-// ---------------------------------------------------------------------------
-// Quadro de Avisos (secondary tab)
-// ---------------------------------------------------------------------------
-
-async function loadBoard() {
-  let data;
-  try {
-    data = await apiCall(`${API}/board/${encodeURIComponent(clan())}`);
-  } catch {
-    return;
-  }
   document.getElementById('goldDisplay').textContent = data.clan_gold ?? '—';
   document.getElementById('dayDisplay').textContent = data.world_day;
 
-  const catDiv = document.getElementById('categories');
+  // Announcements + expedition log render twice: once in the closeable top
+  // banner (first thing on the page, per spec) and once, permanently, in the
+  // Diário de Expedição tab for revisiting after the banner is closed.
+  document.getElementById('topBanner').style.display = 'block';
+  renderAnnouncements(feed.announcements || [], 'announcementsSection', 'announcementsList');
+  renderExpeditionLogs(feed.expedition_logs || [], 'expeditionLogsSection', 'expeditionLogsList');
+  renderAnnouncements(feed.announcements || [], 'announcementsSection2', 'announcementsList2');
+  renderExpeditionLogs(feed.expedition_logs || [], 'expeditionLogsSection2', 'expeditionLogsList2');
+
+  // /board/{clan} already returns everything this clan may see: public listings
+  // (target_clan == null) plus anything targeted at this clan or posted by it
+  // (see board._visible_to). Split that single feed into "Quadro de Avisos"
+  // (public) and "Caixa de Entrada" (targeted, either direction) rather than
+  // calling a separate endpoint.
+  const publicByCat = {};
+  const receivedByCat = {};
+  const sentByCat = {};
+  let inboxCount = 0;
+  for (const [cat, items] of Object.entries(data.listings || {})) {
+    publicByCat[cat] = [];
+    receivedByCat[cat] = [];
+    sentByCat[cat] = [];
+    for (const l of items) {
+      if (!l.target_clan) {
+        publicByCat[cat].push(l);
+      } else if (l.target_clan === clan()) {
+        receivedByCat[cat].push(l);
+        if (l.seller_clan !== clan()) inboxCount++;
+      } else if (l.seller_clan === clan()) {
+        sentByCat[cat].push(l);
+      }
+    }
+  }
+
+  const badge = document.getElementById('inboxBadge');
+  if (inboxCount > 0) { badge.style.display = 'inline-block'; badge.textContent = inboxCount; }
+  else { badge.style.display = 'none'; }
+
+  renderCategoryGroup('categories', publicByCat, { showReply: false });
+  renderCategoryGroup('inboxReceived', receivedByCat, { showReply: true });
+  renderCategoryGroup('inboxSent', sentByCat, { showReply: false });
+
+  // Everything else (adventurers/inventory/recipes/knowledge/expedition plan)
+  // is per-tab and fetched lazily in showTab() the first time each tab opens,
+  // so logging in doesn't fire 7 requests before the player picks anything.
+  loadedTabs.clear();
+  showTab(currentTab);
+}
+
+
+function renderCategoryGroup(containerId, byCat, opts) {
+  const catDiv = document.getElementById(containerId);
   catDiv.innerHTML = '';
-  for (const [cat, items] of Object.entries(data.listings)) {
+  const cats = Object.entries(byCat);
+  if (cats.every(([, items]) => items.length === 0)) {
+    catDiv.innerHTML = `<div class="empty">Nada por aqui.</div>`;
+    return;
+  }
+  for (const [cat, items] of cats) {
     const box = document.createElement('div');
     box.className = 'category';
-    box.innerHTML = `<h2>${cat}</h2>`;
+    box.innerHTML = `<h2>${cat}${cat === 'Benfeitorias' ? ' (Missões)' : ''}</h2>`;
     if (items.length === 0) {
       box.innerHTML += `<div class="empty">Nada por aqui.</div>`;
     }
     for (const l of items) {
-      const desc = describeListing(l);
-      const mine = l.seller_clan === clan();
-      box.innerHTML += `
-        <div class="listing">
-          <div>${desc} — <span class="price">${l.price}g</span></div>
-          <div style="color:var(--muted); font-size:0.85em">${l.seller_clan}${l.target_clan ? ' → ' + l.target_clan : ''} · ${l.id}</div>
-          <button onclick="buy('${l.id}', ${mine})">${mine ? 'Cancelar' : 'Comprar'}</button>
-        </div>`;
+      box.appendChild(renderListingCard(l, opts));
     }
     catDiv.appendChild(box);
   }
 }
 
-function describeListing(l) {
-  if (l.category === 'Mercado') return `${l.item_name} (${l.item_type === 'Aventureiro' ? 'aventureiro' : l.quantity + ' disponível'})`;
-  if (l.category === 'Informação') return l.title || '?';
-  if (l.category === 'Benfeitorias') return l.title || '?';
+function renderListingCard(l, opts) {
+  const wrap = document.createElement('div');
+  wrap.className = 'listing';
+  const mine = l.seller_clan === clan();
+  const title = listingTitle(l);
+  const threadTag = l.reply_to ? `<div class="thread-tag">↪ em resposta a ${l.reply_to}</div>` : '';
+
+  wrap.innerHTML = `
+    <div class="title">${title}</div>
+    ${threadTag}
+    <div>${describeListing(l)} — <span class="price">${l.price}g</span></div>
+    ${renderItemStats(l)}
+    <div style="color:var(--muted); font-size:0.85em">${l.seller_clan}${l.target_clan ? ' → ' + l.target_clan : ''} · ${l.id}</div>
+    <div>
+      <button onclick="buy('${l.id}', ${mine})">${mine ? 'Cancelar' : 'Comprar'}</button>
+      ${opts.showReply ? `<button onclick="toggleReply('${l.id}')">Responder</button>` : ''}
+    </div>
+    ${opts.showReply ? renderReplyBox(l) : ''}
+  `;
+  return wrap;
+}
+
+function listingTitle(l) {
+  // Every posting should read with a title: explicit title field first, then
+  // reasonable per-category fallbacks so nothing renders untitled.
+  if (l.title) return l.title;
+  if (l.category === 'Mercado') {
+    return l.item_type === 'Aventureiro' ? `Contratação: ${l.item_name || '?'}` : (l.item_name || 'Item à venda');
+  }
   return l.id;
+}
+
+function describeListing(l) {
+  if (l.category === 'Mercado') {
+    if (l.item_type === 'Aventureiro') return `Aventureiro disponível para contratação`;
+    return `${l.item_name || '?'} (${l.quantity ?? 1} disponível)`;
+  }
+  if (l.category === 'Informação') return l.content || '';
+  if (l.category === 'Benfeitorias') return l.description || '';
+  return '';
+}
+
+// Item stats block for Mercado sell posts — pulls whatever stat-shaped fields
+// the listing carries (mirrors item_templates.json's shape: modifiers/bonus_stats,
+// durability, weapon_class, effects, tags) and renders them as chips. Silently
+// renders nothing for listings that don't carry stats (e.g. Aventureiro, services).
+function renderItemStats(l) {
+  if (l.category !== 'Mercado' || l.item_type === 'Aventureiro') return '';
+  const chips = [];
+  if (l.item_type) chips.push(`Tipo: ${l.item_type}`);
+  if (l.weapon_class) chips.push(`Classe: ${l.weapon_class}`);
+  if (l.durability != null || l.max_durability != null) {
+    chips.push(`Durabilidade: ${l.durability ?? '?'}/${l.max_durability ?? '?'}`);
+  }
+  const modSource = l.modifiers || l.bonus_stats;
+  if (modSource && typeof modSource === 'object') {
+    for (const [stat, val] of Object.entries(modSource)) {
+      chips.push(`${stat} ${val > 0 ? '+' : ''}${val}`);
+    }
+  }
+  if (Array.isArray(l.effects) && l.effects.length) chips.push(`Efeitos: ${l.effects.join(', ')}`);
+  if (Array.isArray(l.tags) && l.tags.length) chips.push(`Tags: ${l.tags.join(', ')}`);
+  if (l.cooldown) chips.push(`Recarga: ${l.cooldown}`);
+  if (l.warmup) chips.push(`Preparo: ${l.warmup}`);
+  if (chips.length === 0) return '';
+  return `<div class="stats">${chips.map(c => `<span class="stat-chip">${c}</span>`).join('')}</div>`;
+}
+
+// ---------------------------------------------------------------------------
+// Responding to targeted posts / quest postings (Benfeitorias)
+// ---------------------------------------------------------------------------
+// There's no separate "message"/"response" model on the backend — a response
+// is just a new Informação listing, targeted back at the original poster,
+// carrying reply_to so the thread can be followed (see threadTag above).
+// This covers both "respond to a targeted post" and "respond to a quest
+// posting" (Benfeitorias) with the same mechanism.
+
+function renderReplyBox(l) {
+  return `
+    <div class="reply-box" id="reply_${l.id}">
+      <textarea id="replyText_${l.id}" placeholder="Escreva sua resposta..."></textarea>
+      <button style="margin-top:6px" onclick="submitReply('${l.id}', '${l.seller_clan.replace(/'/g, "\\'")}')">Enviar Resposta</button>
+    </div>`;
+}
+
+function toggleReply(listingId) {
+  document.getElementById(`reply_${listingId}`).classList.toggle('open');
+}
+
+async function submitReply(listingId, toClan) {
+  const textEl = document.getElementById(`replyText_${listingId}`);
+  const text = textEl.value.trim();
+  if (!text) { showError('Escreva uma resposta antes de enviar.'); return; }
+  const body = {
+    category: 'Informação',
+    price: 0,
+    target_clan: toClan,
+    fields: { title: `Re: ${listingId}`, content: text, reply_to: listingId },
+    pin: pin(),
+  };
+  try {
+    await apiCall(`${API}/board/${encodeURIComponent(clan())}/post`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    return;
+  }
+  textEl.value = '';
+  loadBoard();
+}
+
+async function sendDirectMessage() {
+  const target = document.getElementById('msgTarget').value.trim();
+  const title = document.getElementById('msgTitle').value.trim();
+  const content = document.getElementById('msgContent').value.trim();
+  if (!target) { showError('Informe o clã destinatário.'); return; }
+  if (!title) { showError('Informe um título para a mensagem.'); return; }
+  const body = {
+    category: 'Informação',
+    price: 0,
+    target_clan: target,
+    fields: { title, content },
+    pin: pin(),
+  };
+  try {
+    await apiCall(`${API}/board/${encodeURIComponent(clan())}/post`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    return;
+  }
+  document.getElementById('msgTarget').value = '';
+  document.getElementById('msgTitle').value = '';
+  document.getElementById('msgContent').value = '';
+  loadBoard();
+}
+
+// ---------------------------------------------------------------------------
+// GM Announcements & Expedition Logs
+// ---------------------------------------------------------------------------
+
+// Resolves an announcement image field to a usable <img> src.
+// Accepts a full URL (http/https) or a path stored server-side (relative to API).
+function resolveImageSrc(imagePath) {
+  if (!imagePath) return null;
+  if (/^https?:\/\//i.test(imagePath)) return imagePath;
+  const cleanPath = imagePath.replace(/^\/+/, '');
+  return `${API}/${cleanPath}`;
+}
+
+// /feed/{clan} already filters to what this clan may see (public + targeted-at-me,
+// see board.visible_announcements) and already sorts pinned-first/newest-first, so
+// there's no client-side visibility filtering left to do — just split "tutorial"
+// announcements (title starts with "Tutorial:", the GM's convention; there's no
+// separate tutorial model in the backend) out from regular ones so they render
+// in their own group, per spec: announcements, then tutorials, then the log.
+function renderAnnouncements(announcements, sectionId, listId) {
+  const section = document.getElementById(sectionId);
+  const list = document.getElementById(listId);
+
+  if (!announcements || announcements.length === 0) {
+    section.style.display = 'none';
+    list.innerHTML = '';
+    return;
+  }
+
+  const isTutorial = a => (a.title || '').trim().toLowerCase().startsWith('tutorial:');
+  const regular = announcements.filter(a => !isTutorial(a));
+  const tutorials = announcements.filter(isTutorial);
+
+  const renderOne = a => {
+    const imgSrc = resolveImageSrc(a.image_url);
+    const targetLabel = a.target_clan ? `<span class="ann-target">Somente para ${a.target_clan}</span> · ` : '';
+    return `
+      <div class="announcement">
+        ${a.title ? `<strong>${a.title}</strong>` : ''}
+        <div>${(a.content || '').replace(/\n/g, '<br>')}</div>
+        ${imgSrc ? `<img src="${imgSrc}" alt="${a.title || 'Aviso'}" loading="lazy">` : ''}
+        <div class="ann-meta">${targetLabel}${a.pinned ? 'Fixado · ' : ''}Dia ${a.created_day ?? '—'}</div>
+      </div>`;
+  };
+
+  section.style.display = 'block';
+  let html = regular.map(renderOne).join('');
+  if (tutorials.length) {
+    html += `<h2 style="margin-top:16px; font-size:1em;">Tutoriais</h2>` + tutorials.map(renderOne).join('');
+  }
+  list.innerHTML = html;
+}
+
+// Expedition logs come back from /feed/{clan} already scoped to this clan and
+// already limited to days that have passed (see board.visible_expedition_logs),
+// newest first — rendered here exactly as received.
+function renderExpeditionLogs(logs, sectionId, listId) {
+  const section = document.getElementById(sectionId);
+  const list = document.getElementById(listId);
+
+  if (!logs || logs.length === 0) {
+    section.style.display = 'none';
+    list.innerHTML = '';
+    return;
+  }
+
+  section.style.display = 'block';
+  list.innerHTML = logs.map(l => `
+    <div class="log-entry">
+      ${l.title ? `<strong>${l.title}</strong><br>` : ''}
+      <div>${(l.content || '').replace(/\n/g, '<br>')}</div>
+      ${l.image_url ? `<img src="${resolveImageSrc(l.image_url)}" alt="${l.title || 'Registro'}" loading="lazy">` : ''}
+      <div class="log-meta">${l.clan || 'Clã'} · Dia ${l.day ?? '—'}</div>
+    </div>`).join('');
 }
 
 async function buy(listingId, isMine) {
@@ -294,105 +621,68 @@ async function buy(listingId, isMine) {
     showError(null);
     alert(data.message || 'Feito.');
   } catch {
-    return;
+    return; // error already shown
   }
   loadBoard();
 }
 
-async function renderNewPostFields() {
+function renderNewPostFields() {
   const cat = document.getElementById('newCategory').value;
   const div = document.getElementById('newFields');
-
-  if (cat === 'Mercado') {
-    // Roster data (real item/character names) is needed to populate the
-    // dropdowns — fetch it if we don't already have it cached (e.g. from
-    // visiting the Expedition tab already).
-    if (roster.characters.length === 0 && roster.items.length === 0) {
-      try {
-        roster = await apiCall(`${API}/clans/${encodeURIComponent(clan())}/roster`);
-      } catch {
-        roster = { characters: [], items: [] };
-      }
-    }
-    div.innerHTML = `
-      <label>Tipo</label>
-      <select id="f_market_type" onchange="renderMarketItemOptions()">
-        <option value="Equipamento">Equipamento</option>
-        <option value="Materiais">Materiais</option>
-        <option value="Aventureiros">Aventureiros</option>
-      </select>
-      <label>Item</label>
-      <select id="f_item_name"></select>
-      <div id="marketQuantityRow">
-        <label>Quantidade</label>
-        <input id="f_quantity" type="number" value="1" min="1">
-      </div>
-    `;
-    renderMarketItemOptions();
-    return;
-  }
-
   const templates = {
-    Informação: `<label>Título</label><input id="f_title"><label>Conteúdo</label><input id="f_content">`,
-    Benfeitorias: `
-      <label>Título</label>
-      <select id="f_title">${optionsHtml(BENFEITORIA_TITLE_OPTIONS, '')}</select>
-      <label>Descrição</label>
-      <select id="f_description">${optionsHtml(BENFEITORIA_DESCRIPTION_OPTIONS, '')}</select>`,
+    // "Contratar" isn't a real backend category (board.CATEGORIES only has
+    // Mercado/Informação/Benfeitorias) — hiring an adventurer is a Mercado
+    // listing with item_type Aventureiro (see board.apply_purchase), so it's
+    // folded in here as a Mercado sub-type instead of a separate category.
+    Mercado: `
+      <label>Tipo</label>
+      <select id="f_item_type" onchange="renderMercadoSubFields()">
+        <option>Material</option><option>Consumível</option><option>Ferramenta</option>
+        <option>Flecha</option><option>Extrato</option><option>Comida</option><option>Equipamento</option>
+        <option>Aventureiro</option>
+      </select>
+      <div id="mercadoSubFields"></div>`,
+    Informação: `<label>Conteúdo</label><textarea id="f_content" placeholder="Mensagem / anúncio"></textarea>`,
+    Benfeitorias: `<label>Descrição da Missão</label><textarea id="f_description" placeholder="O que precisa ser feito, recompensa esperada, prazo..."></textarea>`,
   };
   div.innerHTML = templates[cat];
+  if (cat === 'Mercado') renderMercadoSubFields();
 }
 
-// Equipamento = unique items (Item.quantity is null in the DB, e.g. weapons/armor
-// instances like "Esgrima#001"). Materiais = stackable items (Item.quantity is
-// set). Aventureiros = the clan's actual characters — buying one now really
-// transfers the Character row (board.py's Mercado purchase logic handles the
-// "Aventureiro" item_type specially; Contratar has been removed entirely).
-function renderMarketItemOptions() {
-  const type = document.getElementById('f_market_type').value;
-  const itemSelect = document.getElementById('f_item_name');
-  const qtyRow = document.getElementById('marketQuantityRow');
-
-  let options = [];
-  if (type === 'Equipamento') {
-    options = roster.items.filter(it => it.quantity == null).map(it => it.name);
-  } else if (type === 'Materiais') {
-    options = roster.items.filter(it => it.quantity != null).map(it => it.name);
-  } else if (type === 'Aventureiros') {
-    options = roster.characters.map(c => c.name);
+function renderMercadoSubFields() {
+  const itemType = document.getElementById('f_item_type').value;
+  const div = document.getElementById('mercadoSubFields');
+  if (itemType === 'Aventureiro') {
+    div.innerHTML = `<label>Nome do Aventureiro</label><input id="f_item_name">`;
+    return;
   }
-
-  itemSelect.innerHTML = options.length
-    ? options.map(o => `<option value="${o}">${o}</option>`).join('')
-    : `<option value="">— nada disponível —</option>`;
-
-  // Quantity only makes sense for stackable materials — a unique equipment
-  // instance or a character is always exactly one.
-  qtyRow.style.display = type === 'Materiais' ? 'block' : 'none';
+  const isEquipment = itemType === 'Equipamento' || itemType === 'Ferramenta';
+  div.innerHTML = `
+    <label>Item</label><input id="f_item_name">
+    <label>Quantidade</label><input id="f_quantity" type="number" value="1">
+    ${isEquipment ? `
+    <label>Durabilidade Máxima (opcional)</label><input id="f_max_durability" type="number">
+    ` : ''}`;
 }
 
 async function submitPost() {
   const cat = document.getElementById('newCategory').value;
-  let fields = {};
+  const title = document.getElementById('newTitle').value.trim();
+  if (!title) { showError('Toda postagem precisa de um título.'); return; }
 
-  if (cat === 'Mercado') {
-    const marketType = document.getElementById('f_market_type').value;
-    const itemName = document.getElementById('f_item_name').value;
-    if (!itemName) { showError('Escolha um item.'); return; }
-    // Map the simplified Tipo (Equipamento/Materiais/Aventureiros) to what
-    // board.py's stackable-vs-unique logic actually checks for — "Material"
-    // is what makes it stack, anything else is treated as a unique item.
-    const backendTypeMap = { Equipamento: 'Equipamento', Materiais: 'Material', Aventureiros: 'Aventureiro' };
-    fields = {
-      item_name: itemName,
-      item_type: backendTypeMap[marketType],
-      quantity: marketType === 'Materiais' ? (parseInt(document.getElementById('f_quantity').value, 10) || 1) : 1,
-    };
-  } else {
-    document.querySelectorAll('#newFields [id^="f_"]').forEach(el => {
-      const key = el.id.slice(2);
-      fields[key] = el.type === 'number' ? parseInt(el.value, 10) : el.value;
-    });
+  const fields = { title };
+  document.querySelectorAll('#newFields [id^="f_"]').forEach(el => {
+    const key = el.id.slice(2);
+    if (el.value === '') return; // don't send empty optional fields
+    if (el.tagName === 'TEXTAREA') { fields[key] = el.value; return; }
+    fields[key] = el.type === 'number' ? parseInt(el.value, 10) : el.value;
+  });
+  // Aventureiro listings key off item_name (see board.apply_purchase's
+  // _transfer_character), quantity doesn't apply to them.
+  if (cat === 'Mercado' && fields.item_type === 'Aventureiro') {
+    delete fields.quantity;
+  } else if (fields.max_durability != null) {
+    fields.durability = fields.max_durability; // brand-new listing, starts at full durability
   }
 
   const body = {
@@ -408,62 +698,206 @@ async function submitPost() {
       body: JSON.stringify(body),
     });
   } catch {
-    return;
+    return; // error already shown
   }
+  document.getElementById('newTitle').value = '';
   loadBoard();
 }
 
-// renderNewPostFields() is called at the bottom of the script instead of here,
-// since it reads `roster`, which isn't declared until the Expedition Plan
-// section below — calling it this early would hit the same temporal-dead-zone
-// bug the expeditionState initial-render had.
+renderNewPostFields();
 
 // ---------------------------------------------------------------------------
 // Expedition Plan
-//
-// Layout/field counts mirror the original spreadsheet template exactly:
-//   - per character: 6 ability dropdown slots, 6 equipment dropdown slots,
-//     3 instruction slots (main.py's parser only uses the first 3 abilities
-//     and first 6 equipment it finds — extra ability slots are harmless
-//     spares, same as in the original sheet)
-//   - map/time section: always 3 rows (Manhã/Tarde/Noite, fixed order)
-//   - "Com as instruções": 3 general instruction slots
-//   - town/crafting: always 5 material rows
-//   - "Além disso...": one extra free-form note appended after the 3
-//     general instructions
 // ---------------------------------------------------------------------------
-
-const ABILITY_SLOTS = 6;
-const EQUIPMENT_SLOTS = 6;
-const INSTRUCTION_SLOTS = 3;
-const GENERAL_INSTRUCTION_SLOTS = 3;
-const MATERIAL_SLOTS = 5;
-const TIMES_OF_DAY = ['Manhã', 'Tarde', 'Noite'];
-// Empty until main.py's real Instrucoes.json (or the AyaIA knowledge-base file
-// documenting valid In/Ie instructions) is available — these are proper <select>
-// dropdowns now, so until real values exist here, they'll only offer "---".
-const INSTRUCTION_OPTIONS = [];
-// Same situation for Benfeitorias — no real fixed vocabulary was provided yet,
-// so these dropdowns are structurally correct but empty until populated.
-const BENFEITORIA_TITLE_OPTIONS = [];
-const BENFEITORIA_DESCRIPTION_OPTIONS = [];
 
 let roster = { characters: [], items: [] };
 let expeditionState = {
-  characters: [null, null, null], // each: {name, abilities:[6], equipment:[6], instructions:[3]}
-  map_steps: TIMES_OF_DAY.map(t => ({ map: '', floor: 1, time: t })),
-  expedition_instructions: ['', '', ''],
-  extra_note: '',
-  town: null, // {character, materials: [[name, qty], ...5]}
+  characters: [],       // up to 3: {name, abilities:[], equipment:[], instructions:[]}
+  map_steps: [],        // {map, floor, time}
+  expedition_instructions: [],
+  town: null,           // {character, materials:[[name,qty],...]} or null
 };
 
-function emptyCharSlot(name) {
-  return {
-    name,
-    abilities: Array(ABILITY_SLOTS).fill(''),
-    equipment: Array(EQUIPMENT_SLOTS).fill(''),
-    instructions: Array(INSTRUCTION_SLOTS).fill(''),
-  };
+const TABS = ['expedition', 'diary', 'adventurers', 'inventory', 'recipes', 'knowledge', 'inbox', 'postings'];
+let currentTab = 'expedition';
+let loadedTabs = new Set();
+
+function showTab(tab) {
+  currentTab = tab;
+  document.getElementById('expeditionTab').style.display = tab === 'expedition' ? 'block' : 'none';
+  document.getElementById('diaryTab').style.display = tab === 'diary' ? 'block' : 'none';
+  document.getElementById('adventurersTab').style.display = tab === 'adventurers' ? 'block' : 'none';
+  document.getElementById('inventoryTab').style.display = tab === 'inventory' ? 'block' : 'none';
+  document.getElementById('recipesTab').style.display = tab === 'recipes' ? 'block' : 'none';
+  document.getElementById('knowledgeTab').style.display = tab === 'knowledge' ? 'block' : 'none';
+  document.getElementById('inboxTab').style.display = tab === 'inbox' ? 'block' : 'none';
+  document.getElementById('postingsTab').style.display = tab === 'postings' ? 'block' : 'none';
+
+  document.getElementById('tabExpeditionBtn').classList.toggle('active', tab === 'expedition');
+  document.getElementById('tabDiaryBtn').classList.toggle('active', tab === 'diary');
+  document.getElementById('tabAdventurersBtn').classList.toggle('active', tab === 'adventurers');
+  document.getElementById('tabInventoryBtn').classList.toggle('active', tab === 'inventory');
+  document.getElementById('tabRecipesBtn').classList.toggle('active', tab === 'recipes');
+  document.getElementById('tabKnowledgeBtn').classList.toggle('active', tab === 'knowledge');
+  document.getElementById('tabInboxBtn').classList.toggle('active', tab === 'inbox');
+  document.getElementById('tabPostingsBtn').classList.toggle('active', tab === 'postings');
+
+  if (loadedTabs.has(tab)) return;
+  loadedTabs.add(tab);
+  if (tab === 'expedition') loadExpeditionTab();
+  else if (tab === 'adventurers') loadAdventurersTab();
+  else if (tab === 'inventory') loadInventoryTab();
+  else if (tab === 'recipes') loadRecipesTab();
+  else if (tab === 'knowledge') loadKnowledgeTab();
+}
+
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+
+// ---------------------------------------------------------------------------
+// Aventureiros — full character sheets (GET /clans/{clan}/adventurers)
+// ---------------------------------------------------------------------------
+
+async function loadAdventurersTab() {
+  let data;
+  try {
+    data = await apiCall(`${API}/clans/${encodeURIComponent(clan())}/adventurers`);
+  } catch {
+    return;
+  }
+  const container = document.getElementById('adventurersList');
+  const advs = data.adventurers || [];
+  if (advs.length === 0) {
+    container.innerHTML = `<div class="empty">Nenhum aventureiro neste clã ainda.</div>`;
+    return;
+  }
+  container.innerHTML = advs.map(a => {
+    const statRows = Object.entries(a.stats || {}).map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('');
+    const traits = (a.traits || []).map(t => `<span class="stat-chip">${t}</span>`).join('');
+    const abilities = (a.abilities || []).map(t => `<span class="stat-chip">${t}</span>`).join('');
+    const instr = (a.instructions || []).map(t => `<span class="stat-chip">${t}</span>`).join('');
+    const destiny = a.destiny && Object.keys(a.destiny).length
+      ? Object.entries(a.destiny).map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('') : '';
+    return `
+      <div class="char-card">
+        <h3>${a.name} <span style="color:var(--muted); font-weight:normal; font-size:0.8em;">— ${a.class || '?'}, nível ${a.level ?? 1}</span></h3>
+        <table class="stat-table">
+          <tr><td>EXP</td><td>${a.exp ?? '—'}</td></tr>
+          <tr><td>Coragem</td><td>${a.courage ?? '—'}</td></tr>
+          <tr><td>Mentor</td><td>${a.mentor || '—'}</td></tr>
+          ${statRows}
+        </table>
+        ${traits ? `<label>Traços</label><div class="tag-row">${traits}</div>` : ''}
+        ${abilities ? `<label>Habilidades</label><div class="tag-row">${abilities}</div>` : ''}
+        ${instr ? `<label>Instruções Padrão</label><div class="tag-row">${instr}</div>` : ''}
+        ${destiny ? `<label>Destino</label><table class="stat-table">${destiny}</table>` : ''}
+      </div>`;
+  }).join('');
+}
+
+// ---------------------------------------------------------------------------
+// Inventário — equipment (unique, has durability) + materials (stacking)
+// (GET /clans/{clan}/inventory)
+// ---------------------------------------------------------------------------
+
+async function loadInventoryTab() {
+  let data;
+  try {
+    data = await apiCall(`${API}/clans/${encodeURIComponent(clan())}/inventory`);
+  } catch {
+    return;
+  }
+  renderItemList('equipmentList', data.equipment || [], true);
+  renderItemList('materialsList', data.materials || [], false);
+}
+
+function renderItemList(containerId, items, isEquipment) {
+  const container = document.getElementById(containerId);
+  if (items.length === 0) {
+    container.innerHTML = `<div class="empty">Vazio.</div>`;
+    return;
+  }
+  container.innerHTML = items.map(it => {
+    const chips = [];
+    if (it.type) chips.push(`Tipo: ${it.type}`);
+    const modEntries = Object.entries(it.modifiers || {});
+    for (const [stat, val] of modEntries) chips.push(`${stat} ${val > 0 ? '+' : ''}${val}`);
+    if ((it.effects || []).length) chips.push(`Efeitos: ${it.effects.join(', ')}`);
+    if ((it.tags || []).length) chips.push(`Tags: ${it.tags.join(', ')}`);
+
+    let durabilityHtml = '';
+    if (isEquipment && it.max_durability) {
+      const pct = Math.max(0, Math.min(100, (100 * (it.durability ?? 0)) / it.max_durability));
+      durabilityHtml = `
+        <div style="font-size:0.85em; color:var(--muted); margin-top:4px;">Durabilidade: ${it.durability ?? '?'}/${it.max_durability}</div>
+        <div class="durability-bar"><div style="width:${pct}%"></div></div>`;
+    }
+
+    return `
+      <div class="item-card">
+        <div><span class="title">${it.name}</span>${!isEquipment ? `<span class="qty">x${it.quantity ?? 1}</span>` : ''}</div>
+        ${chips.length ? `<div class="tag-row">${chips.map(c => `<span class="stat-chip">${c}</span>`).join('')}</div>` : ''}
+        ${durabilityHtml}
+      </div>`;
+  }).join('');
+}
+
+// ---------------------------------------------------------------------------
+// Receitas & Conhecimento (GET /clans/{clan}/knowledge)
+// ---------------------------------------------------------------------------
+
+async function loadRecipesTab() {
+  let data;
+  try {
+    data = await apiCall(`${API}/clans/${encodeURIComponent(clan())}/knowledge`);
+  } catch {
+    return;
+  }
+  document.getElementById('recipesNote').textContent = (data.notes || {}).recipes || '';
+  const container = document.getElementById('recipesList');
+  const recipes = data.recipes || [];
+  if (recipes.length === 0) {
+    container.innerHTML = `<div class="empty">Nenhuma receita cadastrada.</div>`;
+    return;
+  }
+  container.innerHTML = recipes.map(r => {
+    let matsHtml = '<span class="empty">sem lista de materiais</span>';
+    if (Array.isArray(r.recipe)) {
+      matsHtml = r.recipe.map(m => Array.isArray(m) ? `${m[1]}x ${m[0]}` : String(m))
+        .map(c => `<span class="stat-chip">${c}</span>`).join('');
+    } else if (r.recipe && typeof r.recipe === 'object') {
+      matsHtml = Object.entries(r.recipe).map(([k, v]) => `<span class="stat-chip">${v}x ${k}</span>`).join('');
+    }
+    return `
+      <div class="item-card">
+        <div class="title">${r.name}</div>
+        <div style="color:var(--muted); font-size:0.85em">${r.type || ''}</div>
+        <div class="tag-row" style="margin-top:6px;">${matsHtml}</div>
+      </div>`;
+  }).join('');
+}
+
+async function loadKnowledgeTab() {
+  let data;
+  try {
+    data = await apiCall(`${API}/clans/${encodeURIComponent(clan())}/knowledge`);
+  } catch {
+    return;
+  }
+  const abilities = data.abilities || [];
+  document.getElementById('knowledgeAbilities').innerHTML = abilities.length
+    ? abilities.map(a => `<span class="stat-chip">${a}</span>`).join('')
+    : `<span class="empty">Nenhuma habilidade conhecida por este clã ainda.</span>`;
+
+  document.getElementById('knowledgeMapsNote').textContent = (data.notes || {}).maps || '';
+  document.getElementById('knowledgeMaps').innerHTML = (data.maps || []).length
+    ? data.maps.map(m => `<span class="stat-chip">${m}</span>`).join('')
+    : `<div class="empty">Nenhum mapa registrado ainda.</div>`;
+
+  document.getElementById('knowledgeBestiaryNote').textContent = (data.notes || {}).bestiary || '';
+  document.getElementById('knowledgeBestiary').innerHTML = (data.bestiary || []).length
+    ? data.bestiary.map(b => `<span class="stat-chip">${b}</span>`).join('')
+    : `<div class="empty">Nenhum inimigo registrado ainda.</div>`;
 }
 
 async function loadExpeditionTab() {
@@ -472,50 +906,17 @@ async function loadExpeditionTab() {
   } catch {
     return;
   }
-
-  const mapList = document.getElementById('mapNamesList');
-  // No real Maps.json data available yet — left empty on purpose, see comment above.
-  mapList.innerHTML = '';
-
   let saved;
   try {
     saved = await apiCall(`${API}/expedition/${encodeURIComponent(clan())}`);
   } catch {
-    saved = {};
+    saved = { characters: [], map_steps: [], expedition_instructions: [], town: null };
   }
-
-  const chars = (saved.characters || []).slice(0, 3).map(c => {
-    const slot = emptyCharSlot(c.name);
-    (c.abilities || []).slice(0, ABILITY_SLOTS).forEach((a, i) => slot.abilities[i] = a);
-    (c.equipment || []).slice(0, EQUIPMENT_SLOTS).forEach((e, i) => slot.equipment[i] = e);
-    (c.instructions || []).slice(0, INSTRUCTION_SLOTS).forEach((ins, i) => slot.instructions[i] = ins);
-    return slot;
-  });
-  while (chars.length < 3) chars.push(null);
-
-  const savedSteps = saved.map_steps || [];
-  const mapSteps = TIMES_OF_DAY.map(t => {
-    const found = savedSteps.find(s => s.time === t);
-    return found ? { map: found.map || '', floor: found.floor || 1, time: t } : { map: '', floor: 1, time: t };
-  });
-
-  // First 3 saved general instructions go in the fixed "Com as instruções" slots;
-  // anything beyond that (or a 4th item) becomes the "Além disso..." note.
-  const savedInstr = saved.expedition_instructions || [];
-  const generalInstr = savedInstr.slice(0, GENERAL_INSTRUCTION_SLOTS);
-  while (generalInstr.length < GENERAL_INSTRUCTION_SLOTS) generalInstr.push('');
-  const extraNote = savedInstr.slice(GENERAL_INSTRUCTION_SLOTS).join('; ');
-
-  let town = saved.town || null;
-  if (town) {
-    const materials = (town.materials || []).slice(0, MATERIAL_SLOTS);
-    while (materials.length < MATERIAL_SLOTS) materials.push(['', 1]);
-    town = { character: town.character, materials };
-  }
-
   expeditionState = {
-    characters: chars, map_steps: mapSteps,
-    expedition_instructions: generalInstr, extra_note: extraNote, town,
+    characters: saved.characters || [],
+    map_steps: saved.map_steps || [],
+    expedition_instructions: saved.expedition_instructions || [],
+    town: saved.town || null,
   };
   renderExpeditionTab();
 }
@@ -525,97 +926,117 @@ function renderExpeditionTab() {
   renderMapSteps();
   renderExpeditionInstructions();
   renderTownSection();
-  document.getElementById('extraNote').value = expeditionState.extra_note || '';
-  document.getElementById('instructionsList').innerHTML =
-    INSTRUCTION_OPTIONS.map(o => `<option value="${o}">`).join('');
-}
-
-function optionsHtml(options, current) {
-  const opts = ['<option value="">---</option>'].concat(
-    options.map(o => `<option value="${o}" ${o === current ? 'selected' : ''}>${o}</option>`)
-  );
-  return opts.join('');
 }
 
 function renderExpeditionCharacters() {
   const container = document.getElementById('expeditionCharacters');
   container.innerHTML = '';
   for (let slot = 0; slot < 3; slot++) {
-    const entry = expeditionState.characters[slot];
+    const current = expeditionState.characters[slot] || null;
     const card = document.createElement('div');
-    card.className = 'card';
+    card.className = 'char-card';
 
     const charOptions = roster.characters.map(c =>
-      `<option value="${c.name}" ${entry && entry.name === c.name ? 'selected' : ''}>${c.name}</option>`
+      `<option value="${c.name}" ${current && current.name === c.name ? 'selected' : ''}>${c.name} (${c.class || '?'}, nv ${c.level || 1})</option>`
     ).join('');
 
     card.innerHTML = `
-      <div class="banner">O clã ${clan()} enviou o aventureiro</div>
-      <select class="pill ${entry ? 'filled' : ''}" onchange="setCharSlotName(${slot}, this.value)">
-        <option value="">---</option>
+      <h3>Aventureiro ${slot + 1}</h3>
+      <label>Personagem</label>
+      <select onchange="setCharSlotName(${slot}, this.value)">
+        <option value="">— vazio —</option>
         ${charOptions}
       </select>
-      <div id="charBody${slot}"></div>
+      <div id="charDetails${slot}"></div>
     `;
     container.appendChild(card);
-    if (entry) renderCharBody(slot);
+    if (current && current.name) renderCharDetails(slot);
   }
 }
 
 function setCharSlotName(slot, name) {
-  expeditionState.characters[slot] = name ? emptyCharSlot(name) : null;
+  if (!name) {
+    expeditionState.characters = expeditionState.characters.filter((_, i) => i !== slot);
+    renderExpeditionCharacters();
+    return;
+  }
+  const entry = { name, abilities: [], equipment: [], instructions: [] };
+  // Keep the array dense/ordered by slot for simplicity.
+  const chars = expeditionState.characters.slice();
+  chars[slot] = entry;
+  expeditionState.characters = chars.filter(Boolean);
   renderExpeditionCharacters();
 }
 
-function renderCharBody(slot) {
+function renderCharDetails(slot) {
   const entry = expeditionState.characters[slot];
   const rosterChar = roster.characters.find(c => c.name === entry.name);
   const known = (rosterChar && rosterChar.known_abilities) || [];
-  const itemNames = roster.items.map(it => it.quantity != null ? `${it.name} (x${it.quantity})` : it.name);
-  const itemValueFor = (label) => label.replace(/ \(x\d+\)$/, '');
+  const detailsDiv = document.getElementById(`charDetails${slot}`);
+  if (!detailsDiv) return;
 
-  const body = document.getElementById(`charBody${slot}`);
-  if (!body) return;
-
-  const abilityCells = entry.abilities.map((val, i) => `
-    <select class="pill ${val ? 'filled' : ''}" onchange="setAbility(${slot}, ${i}, this.value)">
-      ${optionsHtml(known, val)}
-    </select>`).join('');
-
-  const equipmentCells = entry.equipment.map((val, i) => {
-    const labelForVal = val ? (itemNames.find(l => itemValueFor(l) === val) || val) : '';
-    return `
-    <select class="pill ${val ? 'filled' : ''}" onchange="setEquipmentSlot(${slot}, ${i}, this.options[this.selectedIndex].dataset.value || '')">
-      <option value="">---</option>
-      ${itemNames.map(l => `<option value="${l}" data-value="${itemValueFor(l)}" ${itemValueFor(l) === val ? 'selected' : ''}>${l}</option>`).join('')}
-    </select>`;
+  const abilityChips = known.map(a => {
+    const selected = entry.abilities.includes(a);
+    return `<span class="chip ${selected ? 'selected' : ''}" onclick="toggleAbility(${slot}, '${a.replace(/'/g, "\\'")}')">${a}</span>`;
   }).join('');
 
-  const instructionCells = entry.instructions.map((val, i) => `
-    <select class="pill ${val ? 'filled' : ''}" onchange="setInstruction(${slot}, ${i}, this.value)">
-      ${optionsHtml(INSTRUCTION_OPTIONS, val)}
-    </select>`).join('');
+  const itemChips = roster.items.map(it => {
+    const selected = entry.equipment.includes(it.name);
+    const label = it.quantity != null ? `${it.name} (x${it.quantity})` : it.name;
+    return `<span class="chip ${selected ? 'selected' : ''}" onclick="toggleEquipment(${slot}, '${it.name.replace(/'/g, "\\'")}')">${label}</span>`;
+  }).join('');
 
-  body.innerHTML = `
-    <div class="banner">com as habilidades</div>
-    <div class="grid-3">${abilityCells}</div>
-    <div class="banner">o equipamento</div>
-    <div class="grid-3">${equipmentCells}</div>
-    <div class="banner">e as instruções</div>
-    <div class="grid-3">${instructionCells}</div>
+  const instrRows = entry.instructions.map((instr, idx) => `
+    <div style="display:flex; gap:6px; margin-bottom:4px;">
+      <input value="${instr.replace(/"/g, '&quot;')}" onchange="setInstruction(${slot}, ${idx}, this.value)" style="flex:1">
+      <button class="remove-btn" onclick="removeInstruction(${slot}, ${idx})">x</button>
+    </div>`).join('');
+
+  detailsDiv.innerHTML = `
+    <label>Habilidades (até 3) — clique para selecionar</label>
+    <div class="chip-list">${abilityChips || '<span class="empty">nenhuma habilidade conhecida</span>'}</div>
+    <label>Equipamento (até 6) — clique para selecionar</label>
+    <div class="chip-list">${itemChips || '<span class="empty">estoque vazio</span>'}</div>
+    <label>Instruções (até 3)</label>
+    ${instrRows}
+    ${entry.instructions.length < 3 ? `<button onclick="addInstruction(${slot})">+ Instrução</button>` : ''}
   `;
 }
 
-function setAbility(slot, i, value) {
-  expeditionState.characters[slot].abilities[i] = value;
-  renderCharBody(slot);
+function toggleAbility(slot, ability) {
+  const entry = expeditionState.characters[slot];
+  const idx = entry.abilities.indexOf(ability);
+  if (idx >= 0) {
+    entry.abilities.splice(idx, 1);
+  } else {
+    if (entry.abilities.length >= 3) { showError('Máximo de 3 habilidades.'); return; }
+    entry.abilities.push(ability);
+  }
+  renderCharDetails(slot);
 }
-function setEquipmentSlot(slot, i, value) {
-  expeditionState.characters[slot].equipment[i] = value;
-  renderCharBody(slot);
+
+function toggleEquipment(slot, itemName) {
+  const entry = expeditionState.characters[slot];
+  const idx = entry.equipment.indexOf(itemName);
+  if (idx >= 0) {
+    entry.equipment.splice(idx, 1);
+  } else {
+    if (entry.equipment.length >= 6) { showError('Máximo de 6 itens de equipamento.'); return; }
+    entry.equipment.push(itemName);
+  }
+  renderCharDetails(slot);
 }
-function setInstruction(slot, i, value) {
-  expeditionState.characters[slot].instructions[i] = value;
+
+function addInstruction(slot) {
+  expeditionState.characters[slot].instructions.push('');
+  renderCharDetails(slot);
+}
+function setInstruction(slot, idx, value) {
+  expeditionState.characters[slot].instructions[idx] = value;
+}
+function removeInstruction(slot, idx) {
+  expeditionState.characters[slot].instructions.splice(idx, 1);
+  renderCharDetails(slot);
 }
 
 function renderMapSteps() {
@@ -623,128 +1044,120 @@ function renderMapSteps() {
   div.innerHTML = '';
   expeditionState.map_steps.forEach((step, idx) => {
     const row = document.createElement('div');
-    row.className = 'grid-2col';
-    const floorOptions = [1, 2, 3, 4, 5, 6].map(f =>
-      `<option value="${f}" ${step.floor === f ? 'selected' : ''}>${f}</option>`).join('');
+    row.className = 'map-step-row';
     row.innerHTML = `
-      <input class="pill ${step.map ? 'filled' : ''}" list="mapNamesList" value="${(step.map || '').replace(/"/g, '&quot;')}"
-             placeholder="Mapa" onchange="updateMapStep(${idx}, 'map', this.value)">
-      <select class="pill" onchange="updateMapStep(${idx}, 'floor', this.value)">${floorOptions}</select>
+      <input placeholder="Mapa (ex: Floresta)" value="${step.map || ''}" onchange="updateMapStep(${idx}, 'map', this.value)">
+      <input type="number" placeholder="Andar" value="${step.floor || 1}" style="max-width:80px" onchange="updateMapStep(${idx}, 'floor', this.value)">
+      <select onchange="updateMapStep(${idx}, 'time', this.value)">
+        <option value="" ${!step.time ? 'selected' : ''}>—</option>
+        <option value="Manhã" ${step.time === 'Manhã' ? 'selected' : ''}>Manhã</option>
+        <option value="Tarde" ${step.time === 'Tarde' ? 'selected' : ''}>Tarde</option>
+        <option value="Noite" ${step.time === 'Noite' ? 'selected' : ''}>Noite</option>
+      </select>
+      <button class="remove-btn" onclick="removeMapStep(${idx})">x</button>
     `;
     div.appendChild(row);
   });
 }
+function addMapStep() {
+  expeditionState.map_steps.push({ map: '', floor: 1, time: '' });
+  renderMapSteps();
+}
 function updateMapStep(idx, field, value) {
   expeditionState.map_steps[idx][field] = field === 'floor' ? parseInt(value, 10) || 1 : value;
+}
+function removeMapStep(idx) {
+  expeditionState.map_steps.splice(idx, 1);
+  renderMapSteps();
 }
 
 function renderExpeditionInstructions() {
   const div = document.getElementById('expeditionInstructions');
   div.innerHTML = '';
-  for (let idx = 0; idx < GENERAL_INSTRUCTION_SLOTS; idx++) {
-    const val = expeditionState.expedition_instructions[idx] || '';
-    div.innerHTML += `
-      <select class="pill ${val ? 'filled' : ''}" onchange="updateExpeditionInstruction(${idx}, this.value)">
-        ${optionsHtml(INSTRUCTION_OPTIONS, val)}
-      </select>`;
-  }
+  expeditionState.expedition_instructions.forEach((instr, idx) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex; gap:6px; margin-bottom:6px;';
+    row.innerHTML = `
+      <input value="${instr.replace(/"/g, '&quot;')}" style="flex:1" onchange="updateExpeditionInstruction(${idx}, this.value)">
+      <button class="remove-btn" onclick="removeExpeditionInstruction(${idx})">x</button>
+    `;
+    div.appendChild(row);
+  });
+}
+function addExpeditionInstruction() {
+  expeditionState.expedition_instructions.push('');
+  renderExpeditionInstructions();
 }
 function updateExpeditionInstruction(idx, value) {
   expeditionState.expedition_instructions[idx] = value;
 }
-function updateExtraNote(value) {
-  expeditionState.extra_note = value;
+function removeExpeditionInstruction(idx) {
+  expeditionState.expedition_instructions.splice(idx, 1);
+  renderExpeditionInstructions();
 }
 
 function renderTownSection() {
   const select = document.getElementById('townCharacter');
   const currentChar = expeditionState.town ? expeditionState.town.character : '';
-  select.innerHTML = optionsHtml(roster.characters.map(c => c.name), currentChar);
-  select.className = `pill ${currentChar ? 'filled' : ''}`;
+  select.innerHTML = '<option value="">— ninguém fica —</option>' +
+    roster.characters.map(c => `<option value="${c.name}" ${c.name === currentChar ? 'selected' : ''}>${c.name}</option>`).join('');
   select.onchange = () => {
     if (!select.value) {
       expeditionState.town = null;
     } else {
-      const materials = Array.from({ length: MATERIAL_SLOTS }, (_, i) =>
-        (expeditionState.town && expeditionState.town.materials[i]) || ['', 1]);
-      expeditionState.town = { character: select.value, materials };
+      expeditionState.town = expeditionState.town && expeditionState.town.character === select.value
+        ? expeditionState.town
+        : { character: select.value, materials: [] };
     }
     renderTownSection();
   };
 
   const matDiv = document.getElementById('townMaterials');
   matDiv.innerHTML = '';
-  const materials = expeditionState.town ? expeditionState.town.materials : Array(MATERIAL_SLOTS).fill(['', 1]);
-  const itemNames = roster.items.map(it => it.name);
-  const itemByName = {};
-  roster.items.forEach(it => { itemByName[it.name] = it; });
-  for (let idx = 0; idx < MATERIAL_SLOTS; idx++) {
-    const mat = materials[idx] || ['', 1];
-    // Cap available quantity to what the clan actually has of the selected item —
-    // unique items (quantity === null, e.g. a specific sword) only have 1 to give;
-    // stackable materials cap at however many the clan actually owns.
-    const selectedItem = itemByName[mat[0]];
-    const maxQty = selectedItem ? (selectedItem.quantity ?? 1) : 20;
-    const qtyOptions = Array.from({ length: Math.max(maxQty, 1) }, (_, i) => i + 1)
-      .map(q => `<option value="${q}" ${mat[1] === q ? 'selected' : ''}>${q}</option>`).join('');
-    const row = document.createElement('div');
-    row.style.cssText = 'display:grid; grid-template-columns: 2fr auto 1fr; gap:8px; margin-bottom:8px; align-items:center;';
-    row.innerHTML = `
-      <select class="pill-green ${mat[0] ? 'filled' : ''}" onchange="updateTownMaterial(${idx}, 0, this.value)">
-        ${optionsHtml(itemNames, mat[0])}
-      </select>
-      <span class="x-label">x</span>
-      <select class="pill-green" onchange="updateTownMaterial(${idx}, 1, this.value)">${qtyOptions}</select>
-    `;
-    matDiv.appendChild(row);
+  if (expeditionState.town) {
+    expeditionState.town.materials.forEach((mat, idx) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex; gap:6px; margin-bottom:6px;';
+      row.innerHTML = `
+        <input placeholder="Material" value="${mat[0] || ''}" style="flex:2" onchange="updateTownMaterial(${idx}, 0, this.value)">
+        <input type="number" placeholder="Qtd" value="${mat[1] || 1}" style="flex:1" onchange="updateTownMaterial(${idx}, 1, this.value)">
+        <button class="remove-btn" onclick="removeTownMaterial(${idx})">x</button>
+      `;
+      matDiv.appendChild(row);
+    });
   }
 }
+function addTownMaterial() {
+  if (!expeditionState.town) { showError('Escolha um personagem para ficar no clã primeiro.'); return; }
+  expeditionState.town.materials.push(['', 1]);
+  renderTownSection();
+}
 function updateTownMaterial(idx, field, value) {
-  if (!expeditionState.town) return;
   expeditionState.town.materials[idx][field] = field === 1 ? (parseInt(value, 10) || 1) : value;
-  if (field === 0) renderTownSection(); // material changed — quantity cap depends on which item, refresh it
+}
+function removeTownMaterial(idx) {
+  expeditionState.town.materials.splice(idx, 1);
+  renderTownSection();
 }
 
 async function saveExpeditionPlan() {
-  const characters = expeditionState.characters
-    .filter(Boolean)
-    .map(c => ({
-      name: c.name,
-      // Backend caps abilities at 3 / equipment at 6, matching main.py's parser —
-      // truncate here so extra spare ability slots never trigger a validation error.
-      abilities: c.abilities.filter(a => a).slice(0, 3),
-      equipment: c.equipment.filter(e => e).slice(0, 6),
-      instructions: c.instructions.filter(i => i && i.trim()),
-    }));
-
-  const map_steps = expeditionState.map_steps.filter(s => s.map && s.map.trim());
-
-  const expedition_instructions = expeditionState.expedition_instructions.filter(x => x && x.trim());
-  if (expeditionState.extra_note && expeditionState.extra_note.trim()) {
-    expedition_instructions.push(expeditionState.extra_note.trim());
-  }
-
-  let town = null;
-  if (expeditionState.town && expeditionState.town.character) {
-    const materials = expeditionState.town.materials.filter(m => m[0] && m[0].trim());
-    if (materials.length > 0) town = { character: expeditionState.town.character, materials };
-  }
-
-  const body = { pin: pin(), characters, map_steps, expedition_instructions, town };
+  const body = {
+    pin: pin(),
+    characters: expeditionState.characters,
+    map_steps: expeditionState.map_steps,
+    expedition_instructions: expeditionState.expedition_instructions.filter(x => x.trim()),
+    town: expeditionState.town,
+  };
   try {
     await apiCall(`${API}/expedition/${encodeURIComponent(clan())}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
   } catch {
-    return;
+    return; // error already shown
   }
   alert('Plano de expedição salvo.');
 }
-
-renderExpeditionTab(); // show the 3 character windows / map / town sections immediately,
-                       // even before login — they just have empty dropdowns until then
-renderNewPostFields(); // now safe — roster is declared above
 </script>
 
 </body>
