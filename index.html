@@ -98,7 +98,7 @@
 <h1>Quadro de Avisos</h1>
 
 <div class="toolbar">
-  <label>Clã: <input id="clanName" value="Pé de Alface"></label>
+  <label>Clã: <input id="clanName" value=""></label>
   <label>PIN: <input id="clanPin" type="password" maxlength="4" placeholder="0000"></label>
   <span>Ouro: <span class="gold" id="goldDisplay">—</span></span>
   <span>Dia: <span id="dayDisplay">—</span></span>
@@ -258,6 +258,26 @@ const API = "https://quadro-de-avisos.fly.dev";
 function clan() { return document.getElementById('clanName').value; }
 function pin() { return document.getElementById('clanPin').value; }
 
+// The GM account has no Clan row (see board.is_gm_login), so it isn't a clan
+// login — but we now try it through the same Clã/PIN fields as everyone
+// else, before falling back to the normal clan login. gmCreds is kept in
+// memory (not persisted) for use by any /gm/* calls once a GM moderation
+// panel is built.
+let gmCreds = null;
+async function tryGmLogin(name, gpin) {
+  try {
+    await apiCall(`${API}/gm/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, pin: gpin }),
+    });
+    gmCreds = { name, pin: gpin };
+    return true;
+  } catch {
+    gmCreds = null;
+    return false;
+  }
+}
+
 function showError(msg) {
   const banner = document.getElementById('errorBanner');
   banner.textContent = msg;
@@ -286,6 +306,15 @@ async function apiCall(url, options = {}) {
 }
 
 async function loadBoard() {
+  // Try GM login first with the same Clã/PIN fields. If it succeeds, this is
+  // a moderator, not a clan, so skip the clan-only login/board/feed calls.
+  if (await tryGmLogin(clan(), pin())) {
+    showError(null);
+    document.getElementById('goldDisplay').textContent = '—';
+    document.getElementById('dayDisplay').textContent = 'Mestre';
+    return;
+  }
+
   try {
     // Verify the PIN first so a wrong PIN shows up clearly, not buried in a 403
     // the next time the player tries to buy something.
@@ -945,6 +974,19 @@ function renderExpeditionTab() {
   renderTownSection();
 }
 
+// A character can only occupy one place at a time: one of the 3 adventurer
+// slots, or the Ficar no Clã slot — never more than one simultaneously.
+function charactersTakenElsewhere(excludeSlot) {
+  const taken = new Set();
+  expeditionState.characters.forEach((c, i) => {
+    if (c && c.name && i !== excludeSlot) taken.add(c.name);
+  });
+  if (excludeSlot !== 'town' && expeditionState.town && expeditionState.town.character) {
+    taken.add(expeditionState.town.character);
+  }
+  return taken;
+}
+
 function renderExpeditionCharacters() {
   const container = document.getElementById('expeditionCharacters');
   container.innerHTML = '';
@@ -953,7 +995,10 @@ function renderExpeditionCharacters() {
     const card = document.createElement('div');
     card.className = 'char-card';
 
-    const charOptions = roster.characters.map(c =>
+    const taken = charactersTakenElsewhere(slot);
+    const charOptions = roster.characters
+      .filter(c => (current && current.name === c.name) || !taken.has(c.name))
+      .map(c =>
       `<option value="${c.name}" ${current && current.name === c.name ? 'selected' : ''}>${c.name} (${c.class || '?'}, nv ${c.level || 1})</option>`
     ).join('');
 
@@ -982,7 +1027,27 @@ function setCharSlotName(slot, name) {
   const chars = expeditionState.characters.slice();
   chars[slot] = entry;
   expeditionState.characters = chars.filter(Boolean);
+  // If this character was staying in the clã, clear that (can't be in both places).
+  if (expeditionState.town && expeditionState.town.character === name) {
+    expeditionState.town = null;
+  }
   renderExpeditionCharacters();
+  renderTownSection();
+}
+
+// An item can only be assigned once at a time across the whole plan: not to
+// two characters' equipment, and not to both a character and Ficar no Clã.
+// excludeSlot: character slot index to exclude (or 'town' to exclude the town materials).
+function itemsTakenElsewhere(excludeSlot) {
+  const taken = new Set();
+  expeditionState.characters.forEach((c, i) => {
+    if (!c || i === excludeSlot) return;
+    (c.equipment || []).forEach(it => it && taken.add(it));
+  });
+  if (excludeSlot !== 'town' && expeditionState.town) {
+    (expeditionState.town.materials || []).forEach(m => m && m[0] && taken.add(m[0]));
+  }
+  return taken;
 }
 
 function renderCharDetails(slot) {
@@ -1021,6 +1086,7 @@ function renderCharDetails(slot) {
   for (let i = 0; i < TOTAL_EQUIPMENT_SLOTS; i++) {
     const currentValue = entry.equipment[i] || '';
     const chosenElsewhere = new Set(entry.equipment.filter((it, ii) => it && ii !== i));
+    itemsTakenElsewhere(slot).forEach(n => chosenElsewhere.add(n));
     const options = roster.items.filter(it => it.name === currentValue || !chosenElsewhere.has(it.name));
     const optHtml = options.map(it => {
       const label = it.quantity != null ? `${it.name} (x${it.quantity})` : it.name;
@@ -1053,17 +1119,21 @@ function setAbilitySlot(slot, slotIndex, ability) {
 function setEquipmentSlot(slot, slotIndex, itemName) {
   const entry = expeditionState.characters[slot];
   entry.equipment[slotIndex] = itemName || '';
-  renderCharDetails(slot);
+  expeditionState.characters.forEach((c, i) => { if (c) renderCharDetails(i); });
+  renderTownSection();
 }
 
 // Roteiro is always exactly 3 lines — no adding/removing steps, just filling
 // in up to 3 legs of the route.
 const TOTAL_MAP_STEPS = 3;
+const MAP_STEP_TIMES = ['Manhã', 'Tarde', 'Noite'];
 function ensureMapStepCount() {
   while (expeditionState.map_steps.length < TOTAL_MAP_STEPS) {
     expeditionState.map_steps.push({ map: '', floor: 1, time: '' });
   }
   expeditionState.map_steps.length = TOTAL_MAP_STEPS;
+  // Time is always Manhã/Tarde/Noite in that order — not a free choice.
+  expeditionState.map_steps.forEach((step, idx) => { step.time = MAP_STEP_TIMES[idx]; });
 }
 function renderMapSteps() {
   ensureMapStepCount();
@@ -1085,12 +1155,7 @@ function renderMapSteps() {
         ${mapOptions}
       </select>
       <input type="number" placeholder="Andar" value="${step.floor || 1}" style="max-width:80px" onchange="updateMapStep(${idx}, 'floor', this.value)">
-      <select onchange="updateMapStep(${idx}, 'time', this.value)">
-        <option value="" ${!step.time ? 'selected' : ''}>—</option>
-        <option value="Manhã" ${step.time === 'Manhã' ? 'selected' : ''}>Manhã</option>
-        <option value="Tarde" ${step.time === 'Tarde' ? 'selected' : ''}>Tarde</option>
-        <option value="Noite" ${step.time === 'Noite' ? 'selected' : ''}>Noite</option>
-      </select>
+      <span style="min-width:60px; color:var(--accent); font-weight:bold;">${MAP_STEP_TIMES[idx]}</span>
     `;
     div.appendChild(row);
   });
@@ -1135,8 +1200,11 @@ function removeExpeditionInstruction(idx) {
 function renderTownSection() {
   const select = document.getElementById('townCharacter');
   const currentChar = expeditionState.town ? expeditionState.town.character : '';
+  const taken = charactersTakenElsewhere('town');
   select.innerHTML = '<option value="">— ninguém fica —</option>' +
-    roster.characters.map(c => `<option value="${c.name}" ${c.name === currentChar ? 'selected' : ''}>${c.name}</option>`).join('');
+    roster.characters
+      .filter(c => c.name === currentChar || !taken.has(c.name))
+      .map(c => `<option value="${c.name}" ${c.name === currentChar ? 'selected' : ''}>${c.name}</option>`).join('');
   select.onchange = () => {
     if (!select.value) {
       expeditionState.town = null;
@@ -1146,6 +1214,7 @@ function renderTownSection() {
         : { character: select.value, materials: [] };
     }
     renderTownSection();
+    renderExpeditionCharacters();
   };
 
   const matDiv = document.getElementById('townMaterials');
@@ -1158,6 +1227,7 @@ function renderTownSection() {
       row.style.cssText = 'display:flex; gap:6px; margin-bottom:6px;';
       const currentValue = mat[0] || '';
       const chosenElsewhere = new Set(expeditionState.town.materials.filter((m, mi) => m[0] && mi !== idx).map(m => m[0]));
+      itemsTakenElsewhere('town').forEach(n => chosenElsewhere.add(n));
       const options = materialNames.filter(n => n === currentValue || !chosenElsewhere.has(n));
       const optHtml = options.map(n => `<option value="${n}" ${n === currentValue ? 'selected' : ''}>${n}</option>`).join('');
       row.innerHTML = `
@@ -1181,6 +1251,10 @@ function ensureTownMaterialCount() {
 }
 function updateTownMaterial(idx, field, value) {
   expeditionState.town.materials[idx][field] = field === 1 ? (parseInt(value, 10) || 1) : value;
+  if (field === 0) {
+    renderTownSection();
+    expeditionState.characters.forEach((c, i) => { if (c) renderCharDetails(i); });
+  }
 }
 
 async function saveExpeditionPlan() {
