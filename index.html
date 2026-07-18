@@ -91,6 +91,27 @@
   .ability-slot.locked { opacity: 0.4; background: repeating-linear-gradient(45deg, #1c1912, #1c1912 6px, #14120e 6px, #14120e 12px); }
   .ability-slot.locked select, .ability-slot.locked * { pointer-events: none; }
   .recipe-known { color: var(--accent); font-size: 0.75em; margin-left: 6px; }
+
+  /* --- GM panel --- */
+  .gm-mode #topBanner, .gm-mode .tabs, .gm-mode #expeditionTab, .gm-mode #diaryTab,
+  .gm-mode #adventurersTab, .gm-mode #inventoryTab, .gm-mode #knowledgeTab,
+  .gm-mode #inboxTab, .gm-mode #postingsTab { display: none !important; }
+  body:not(.gm-mode) #gmPanel { display: none; }
+  #gmPanel h2 { color: var(--accent); margin-top: 0; }
+  #gmPanel .gm-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  #gmPanel .gm-tabs button { background: var(--panel); color: var(--muted); border: 1px solid #3a3428; }
+  #gmPanel .gm-tabs button.active { background: var(--accent); color: #1a1a1a; }
+  #gmPanel .gm-section { display: none; }
+  #gmPanel .gm-section.active { display: block; }
+  #gmPanel label { display: block; margin: 8px 0 2px; font-size: 0.85em; color: var(--muted); }
+  #gmPanel input, #gmPanel select, #gmPanel textarea { width: 100%; background: var(--panel); color: var(--text); border: 1px solid var(--muted); padding: 6px 10px; border-radius: 4px; font-family: inherit; }
+  #gmPanel textarea { min-height: 80px; resize: vertical; }
+  #gmPanel .gm-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  #gmPanel .gm-list-item { border-top: 1px solid #3a3428; padding: 10px 0; font-size: 0.92em; }
+  #gmPanel .gm-list-item:first-child { border-top: none; }
+  #gmPanel .gm-list-item .gm-meta { color: var(--muted); font-size: 0.8em; margin-top: 4px; }
+  #gmPanel .status-inactive { opacity: 0.55; }
+  #gmPanel .gm-flash { background: #1c3020; color: #b9e4c4; padding: 6px 10px; border-radius: 4px; margin-top: 10px; display: none; font-size: 0.9em; }
 </style>
 </head>
 <body>
@@ -251,6 +272,169 @@
 </div>
 </div>
 
+
+<div id="gmPanel">
+  <h1 style="color:var(--accent); border-bottom:1px solid var(--accent); padding-bottom:8px; margin-top:0;">Painel do Mestre</h1>
+  <div class="gm-tabs">
+    <button class="active" onclick="showGmTab('announce')">Anúncios</button>
+    <button onclick="showGmTab('listing')">Postar Listagem</button>
+    <button onclick="showGmTab('inbox')">Caixa Órfã</button>
+    <button onclick="showGmTab('give')">Dar Item</button>
+    <button onclick="showGmTab('move')">Mover Personagem</button>
+    <button onclick="showGmTab('moderate')">Moderar Clã</button>
+    <button onclick="showGmTab('explog')">Log de Expedição</button>
+    <button onclick="showGmTab('manage')">Listagens Publicadas</button>
+  </div>
+
+  <!-- Anúncios -->
+  <div class="gm-section active" id="gmSec_announce">
+    <div class="section">
+      <h2>Novo Anúncio</h2>
+      <label>Título</label><input id="gmAnnTitle" placeholder="Título do aviso">
+      <label>Conteúdo</label><textarea id="gmAnnContent" placeholder="Corpo do aviso..."></textarea>
+      <label>URL de imagem (opcional)</label><input id="gmAnnImage" placeholder="https://...">
+      <div class="gm-row">
+        <div>
+          <label>Clã alvo (vazio = público)</label>
+          <input id="gmAnnTarget" placeholder="nome do clã">
+        </div>
+        <div>
+          <label>Fixado?</label>
+          <select id="gmAnnPinned"><option value="false">Não</option><option value="true">Sim</option></select>
+        </div>
+      </div>
+      <button style="margin-top:10px" onclick="gmPostAnnouncement()">Publicar Anúncio</button>
+      <div class="gm-flash" id="gmAnnFlash"></div>
+    </div>
+    <div class="section">
+      <h2>Anúncios Existentes</h2>
+      <button onclick="gmLoadAnnouncements()">Atualizar Lista</button>
+      <div id="gmAnnList" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <!-- Postar Listagem -->
+  <div class="gm-section" id="gmSec_listing">
+    <div class="section">
+      <h2>Postar Listagem (como qualquer vendedor)</h2>
+      <label>Nome do vendedor (clã fictício ou real)</label>
+      <input id="gmListSeller" placeholder="ex: Mercador Ambulante">
+      <div class="gm-row">
+        <div>
+          <label>Categoria</label>
+          <select id="gmListCategory" onchange="gmRenderListingFields()">
+            <option>Mercado</option><option>Informação</option><option>Benfeitorias</option>
+          </select>
+        </div>
+        <div>
+          <label>Preço (g)</label>
+          <input id="gmListPrice" type="number" value="0">
+        </div>
+      </div>
+      <label>Título</label><input id="gmListTitle" placeholder="Título (obrigatório)">
+      <div id="gmListFields"></div>
+      <div class="gm-row">
+        <div>
+          <label>Clã alvo (vazio = público)</label>
+          <input id="gmListTarget" placeholder="nome do clã">
+        </div>
+        <div>
+          <label>Duração (dias, vazio = padrão)</label>
+          <input id="gmListDuration" type="number" placeholder="7">
+        </div>
+      </div>
+      <button style="margin-top:10px" onclick="gmSubmitListing()">Publicar</button>
+      <div class="gm-flash" id="gmListFlash"></div>
+    </div>
+  </div>
+
+  <!-- Caixa Órfã -->
+  <div class="gm-section" id="gmSec_inbox">
+    <div class="section">
+      <h2>Caixa Órfã (listagens endereçadas a clãs inexistentes)</h2>
+      <button onclick="gmLoadInbox()">Atualizar</button>
+      <div id="gmInboxList" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <!-- Dar Item -->
+  <div class="gm-section" id="gmSec_give">
+    <div class="section">
+      <h2>Dar Item (do catálogo) a um Clã</h2>
+      <label>Nome do template do item</label>
+      <input id="gmGiveTemplate" placeholder="ex: Poção de Cura">
+      <div class="gm-row">
+        <div><label>Clã destinatário</label><input id="gmGiveClan" placeholder="nome do clã"></div>
+        <div><label>Quantidade</label><input id="gmGiveQty" type="number" value="1"></div>
+      </div>
+      <button style="margin-top:10px" onclick="gmGiveItem()">Entregar</button>
+      <div class="gm-flash" id="gmGiveFlash"></div>
+    </div>
+  </div>
+
+  <!-- Mover Personagem -->
+  <div class="gm-section" id="gmSec_move">
+    <div class="section">
+      <h2>Mover Personagem entre Clãs</h2>
+      <label>Nome do personagem</label><input id="gmMoveChar" placeholder="nome exato">
+      <div class="gm-row">
+        <div><label>Do clã (vazio = não atribuído)</label><input id="gmMoveFrom" placeholder="clã de origem"></div>
+        <div><label>Para o clã</label><input id="gmMoveTo" placeholder="clã de destino"></div>
+      </div>
+      <button style="margin-top:10px" onclick="gmMoveChar()">Mover</button>
+      <div class="gm-flash" id="gmMoveFlash"></div>
+    </div>
+  </div>
+
+  <!-- Moderar -->
+  <div class="gm-section" id="gmSec_moderate">
+    <div class="section">
+      <h2>Moderar Clã (banir / silenciar)</h2>
+      <label>Clã</label><input id="gmModClan" placeholder="nome do clã">
+      <label>Ação</label>
+      <select id="gmModAction">
+        <option value="ban">Banir</option>
+        <option value="unban">Desbanir</option>
+        <option value="mute">Silenciar</option>
+        <option value="unmute">Dessilenciar</option>
+      </select>
+      <button style="margin-top:10px" onclick="gmModerate()">Aplicar</button>
+      <div class="gm-flash" id="gmModFlash"></div>
+      <p style="color:var(--muted); font-size:0.85em; margin-top:12px;">Banidos são rejeitados no login. Silenciados têm textos livres substituídos por um placeholder para os outros clãs.</p>
+    </div>
+  </div>
+
+  <!-- Log de Expedição -->
+  <div class="gm-section" id="gmSec_explog">
+    <div class="section">
+      <h2>Publicar Log de Expedição</h2>
+      <div class="gm-row">
+        <div><label>Clã</label><input id="gmLogClan" placeholder="nome do clã"></div>
+        <div><label>Dia</label><input id="gmLogDay" type="number" placeholder="ex: 3"></div>
+      </div>
+      <label>Título</label><input id="gmLogTitle" placeholder="Título (opcional)">
+      <label>Conteúdo</label><textarea id="gmLogContent" placeholder="Descrição do que aconteceu..."></textarea>
+      <label>URL de imagem (opcional)</label><input id="gmLogImage">
+      <button style="margin-top:10px" onclick="gmPostLog()">Publicar Log</button>
+      <div class="gm-flash" id="gmLogFlash"></div>
+      <p style="color:var(--muted); font-size:0.85em; margin-top:12px;">O log só aparece pro clã a partir do dia seguinte ao dia informado.</p>
+    </div>
+  </div>
+
+  <!-- Manage Listings -->
+  <div class="gm-section" id="gmSec_manage">
+    <div class="section">
+      <h2>Remover / Restaurar Listagem por ID</h2>
+      <label>ID da listagem (ex: L1042)</label><input id="gmMgId" placeholder="ID">
+      <div style="margin-top:10px; display:flex; gap:8px;">
+        <button onclick="gmSoftDeleteListing()">Soft-delete</button>
+        <button onclick="gmUndeleteListing()">Restaurar</button>
+      </div>
+      <div class="gm-flash" id="gmMgFlash"></div>
+    </div>
+  </div>
+</div>
+
 <script>
 // Change this to your Fly.io URL once deployed, e.g. "https://quadro-de-avisos.fly.dev"
 const API = "https://quadro-de-avisos.fly.dev";
@@ -312,8 +496,12 @@ async function loadBoard() {
     showError(null);
     document.getElementById('goldDisplay').textContent = '—';
     document.getElementById('dayDisplay').textContent = 'Mestre';
+    document.body.classList.add('gm-mode');
+    gmLoadAnnouncements();
+    gmRenderListingFields();
     return;
   }
+  document.body.classList.remove('gm-mode');
 
   try {
     // Verify the PIN first so a wrong PIN shows up clearly, not buried in a 403
@@ -1286,6 +1474,332 @@ async function saveExpeditionPlan() {
   }
   alert('Plano de expedição salvo.');
 }
+
+
+// ---------------------------------------------------------------------------
+// GM Panel
+// ---------------------------------------------------------------------------
+
+function gmFlash(id, msg, isError) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.style.background = isError ? '#4a1f1f' : '#1c3020';
+  el.style.color = isError ? '#f0c0c0' : '#b9e4c4';
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+function showGmTab(tab) {
+  document.querySelectorAll('#gmPanel .gm-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('#gmPanel .gm-tabs button').forEach(b => b.classList.remove('active'));
+  const sec = document.getElementById('gmSec_' + tab);
+  if (sec) sec.classList.add('active');
+  const btn = [...document.querySelectorAll('#gmPanel .gm-tabs button')]
+    .find(b => b.getAttribute('onclick') === `showGmTab('${tab}')`);
+  if (btn) btn.classList.add('active');
+  if (tab === 'announce') gmLoadAnnouncements();
+  if (tab === 'inbox') gmLoadInbox();
+}
+
+function gmAuth() {
+  if (!gmCreds) { showError('Sessão do Mestre expirada. Faça login novamente.'); return null; }
+  return { gm_name: gmCreds.name, gm_pin: gmCreds.pin };
+}
+
+// --- Announcements ---
+
+async function gmPostAnnouncement() {
+  const auth = gmAuth(); if (!auth) return;
+  const title = document.getElementById('gmAnnTitle').value.trim();
+  if (!title) { gmFlash('gmAnnFlash', 'Título obrigatório.', true); return; }
+  const body = {
+    ...auth,
+    title,
+    content: document.getElementById('gmAnnContent').value,
+    image_url: document.getElementById('gmAnnImage').value.trim() || null,
+    target_clan: document.getElementById('gmAnnTarget').value.trim() || null,
+    pinned: document.getElementById('gmAnnPinned').value === 'true',
+  };
+  try {
+    await apiCall(`${API}/gm/announcement`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    gmFlash('gmAnnFlash', 'Anúncio publicado.');
+    document.getElementById('gmAnnTitle').value = '';
+    document.getElementById('gmAnnContent').value = '';
+    document.getElementById('gmAnnImage').value = '';
+    document.getElementById('gmAnnTarget').value = '';
+    gmLoadAnnouncements();
+  } catch {}
+}
+
+async function gmLoadAnnouncements() {
+  const auth = gmAuth(); if (!auth) return;
+  let list;
+  try {
+    const q = new URLSearchParams(auth).toString();
+    list = await apiCall(`${API}/gm/announcements?${q}`);
+  } catch { return; }
+  const container = document.getElementById('gmAnnList');
+  if (!list.length) { container.innerHTML = '<div class="empty">Nenhum anúncio.</div>'; return; }
+  container.innerHTML = list.map(a => `
+    <div class="gm-list-item ${a.active ? '' : 'status-inactive'}">
+      <strong>${escapeHtml(a.title || '(sem título)')}</strong> ${a.pinned ? '<span class="badge">Fixado</span>' : ''}
+      <div>${escapeHtml(a.content || '').replace(/\n/g, '<br>')}</div>
+      <div class="gm-meta">#${a.id} · ${a.target_clan ? 'Alvo: ' + escapeHtml(a.target_clan) : 'Público'} · Dia ${a.created_day ?? '—'} · ${a.active ? 'Ativo' : 'Removido'}</div>
+      <div style="margin-top:6px;">
+        ${a.active
+          ? `<button onclick="gmRemoveAnn(${a.id})">Remover</button>`
+          : `<button onclick="gmRestoreAnn(${a.id})">Restaurar</button>`}
+      </div>
+    </div>`).join('');
+}
+
+async function gmRemoveAnn(id) {
+  const auth = gmAuth(); if (!auth) return;
+  try {
+    await apiCall(`${API}/gm/announcement/remove`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...auth, announcement_id: id }),
+    });
+    gmLoadAnnouncements();
+  } catch {}
+}
+
+async function gmRestoreAnn(id) {
+  const auth = gmAuth(); if (!auth) return;
+  try {
+    await apiCall(`${API}/gm/announcement/restore`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...auth, announcement_id: id }),
+    });
+    gmLoadAnnouncements();
+  } catch {}
+}
+
+// --- Listings (post) ---
+
+function gmRenderListingFields() {
+  const cat = document.getElementById('gmListCategory').value;
+  const div = document.getElementById('gmListFields');
+  if (cat === 'Mercado') {
+    div.innerHTML = `
+      <div class="gm-row">
+        <div>
+          <label>Tipo</label>
+          <select id="gmL_item_type" onchange="gmRenderMercadoSub()">
+            <option>Material</option><option>Consumível</option><option>Ferramenta</option>
+            <option>Flecha</option><option>Extrato</option><option>Comida</option>
+            <option>Equipamento</option><option>Aventureiro</option>
+          </select>
+        </div>
+        <div id="gmMercadoSubQty"></div>
+      </div>
+      <div id="gmMercadoSub"></div>`;
+    gmRenderMercadoSub();
+  } else if (cat === 'Informação') {
+    div.innerHTML = `<label>Conteúdo</label><textarea id="gmL_content"></textarea>`;
+  } else {
+    div.innerHTML = `<label>Descrição da Missão</label><textarea id="gmL_description"></textarea>`;
+  }
+}
+
+function gmRenderMercadoSub() {
+  const t = document.getElementById('gmL_item_type').value;
+  const sub = document.getElementById('gmMercadoSub');
+  const qty = document.getElementById('gmMercadoSubQty');
+  if (t === 'Aventureiro') {
+    sub.innerHTML = `<label>Nome do Aventureiro</label><input id="gmL_item_name">`;
+    qty.innerHTML = '';
+    return;
+  }
+  sub.innerHTML = `<label>Item</label><input id="gmL_item_name">`;
+  qty.innerHTML = `<label>Quantidade</label><input id="gmL_quantity" type="number" value="1">`;
+  if (t === 'Equipamento' || t === 'Ferramenta') {
+    sub.innerHTML += `<label>Durabilidade Máxima (opcional)</label><input id="gmL_max_durability" type="number">`;
+  }
+}
+
+async function gmSubmitListing() {
+  const auth = gmAuth(); if (!auth) return;
+  const seller = document.getElementById('gmListSeller').value.trim();
+  const title = document.getElementById('gmListTitle').value.trim();
+  if (!seller) { gmFlash('gmListFlash', 'Informe o nome do vendedor.', true); return; }
+  if (!title) { gmFlash('gmListFlash', 'Título obrigatório.', true); return; }
+  const cat = document.getElementById('gmListCategory').value;
+  const fields = { title };
+  document.querySelectorAll('#gmListFields [id^="gmL_"]').forEach(el => {
+    const key = el.id.slice(4);
+    if (el.value === '') return;
+    fields[key] = el.type === 'number' ? parseInt(el.value, 10) : el.value;
+  });
+  if (cat === 'Mercado' && fields.item_type === 'Aventureiro') delete fields.quantity;
+  else if (fields.max_durability != null) fields.durability = fields.max_durability;
+
+  const dur = document.getElementById('gmListDuration').value;
+  const body = {
+    ...auth,
+    seller_clan: seller,
+    category: cat,
+    price: parseInt(document.getElementById('gmListPrice').value, 10) || 0,
+    target_clan: document.getElementById('gmListTarget').value.trim() || null,
+    duration_days: dur ? parseInt(dur, 10) : null,
+    fields,
+  };
+  try {
+    const l = await apiCall(`${API}/gm/post`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    gmFlash('gmListFlash', `Publicado ${l.id}.`);
+    document.getElementById('gmListTitle').value = '';
+  } catch {}
+}
+
+// --- Inbox ---
+
+async function gmLoadInbox() {
+  const auth = gmAuth(); if (!auth) return;
+  let list;
+  try {
+    const q = new URLSearchParams(auth).toString();
+    list = await apiCall(`${API}/gm/inbox?${q}`);
+  } catch { return; }
+  const c = document.getElementById('gmInboxList');
+  if (!list.length) { c.innerHTML = '<div class="empty">Caixa órfã vazia.</div>'; return; }
+  c.innerHTML = list.map(l => `
+    <div class="gm-list-item">
+      <strong>${escapeHtml(l.title || l.item_name || l.id)}</strong>
+      <div>${escapeHtml(l.category)} · ${escapeHtml(l.seller_clan)} → ${escapeHtml(l.target_clan || '')} · ${l.price}g</div>
+      <div class="gm-meta">${l.id} · Dia ${l.created_day}</div>
+      <div style="margin-top:6px;">
+        <button onclick="gmSoftDeleteListingId('${l.id}')">Remover</button>
+      </div>
+    </div>`).join('');
+}
+
+// --- Give item ---
+
+async function gmGiveItem() {
+  const auth = gmAuth(); if (!auth) return;
+  const body = {
+    ...auth,
+    template_name: document.getElementById('gmGiveTemplate').value.trim(),
+    clan_name: document.getElementById('gmGiveClan').value.trim(),
+    qty: parseInt(document.getElementById('gmGiveQty').value, 10) || 1,
+  };
+  if (!body.template_name || !body.clan_name) { gmFlash('gmGiveFlash', 'Informe template e clã.', true); return; }
+  try {
+    const r = await apiCall(`${API}/gm/give_item`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    gmFlash('gmGiveFlash', r.message || 'Entregue.');
+  } catch {}
+}
+
+// --- Move character ---
+
+async function gmMoveChar() {
+  const auth = gmAuth(); if (!auth) return;
+  const body = {
+    ...auth,
+    character_name: document.getElementById('gmMoveChar').value.trim(),
+    from_clan: document.getElementById('gmMoveFrom').value.trim() || null,
+    to_clan: document.getElementById('gmMoveTo').value.trim(),
+  };
+  if (!body.character_name || !body.to_clan) { gmFlash('gmMoveFlash', 'Informe personagem e clã de destino.', true); return; }
+  try {
+    const r = await apiCall(`${API}/gm/move_character`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    gmFlash('gmMoveFlash', r.message || 'Movido.');
+  } catch {}
+}
+
+// --- Moderate ---
+
+async function gmModerate() {
+  const auth = gmAuth(); if (!auth) return;
+  const body = {
+    ...auth,
+    clan_name: document.getElementById('gmModClan').value.trim(),
+    action: document.getElementById('gmModAction').value,
+  };
+  if (!body.clan_name) { gmFlash('gmModFlash', 'Informe o clã.', true); return; }
+  try {
+    const r = await apiCall(`${API}/gm/moderate`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    gmFlash('gmModFlash', r.message || 'Aplicado.');
+  } catch {}
+}
+
+// --- Expedition log ---
+
+async function gmPostLog() {
+  const auth = gmAuth(); if (!auth) return;
+  const body = {
+    ...auth,
+    clan_name: document.getElementById('gmLogClan').value.trim(),
+    day: parseInt(document.getElementById('gmLogDay').value, 10),
+    title: document.getElementById('gmLogTitle').value,
+    content: document.getElementById('gmLogContent').value,
+    image_url: document.getElementById('gmLogImage').value.trim() || null,
+  };
+  if (!body.clan_name || Number.isNaN(body.day)) { gmFlash('gmLogFlash', 'Informe clã e dia.', true); return; }
+  try {
+    await apiCall(`${API}/gm/expedition_log`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    gmFlash('gmLogFlash', 'Log publicado.');
+    document.getElementById('gmLogTitle').value = '';
+    document.getElementById('gmLogContent').value = '';
+  } catch {}
+}
+
+// --- Manage listings by ID ---
+
+async function gmSoftDeleteListing() {
+  const id = document.getElementById('gmMgId').value.trim();
+  if (!id) { gmFlash('gmMgFlash', 'Informe o ID.', true); return; }
+  await gmSoftDeleteListingId(id, 'gmMgFlash');
+}
+async function gmSoftDeleteListingId(id, flashId) {
+  const auth = gmAuth(); if (!auth) return;
+  try {
+    const r = await apiCall(`${API}/gm/listing/soft_delete`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...auth, listing_id: id }),
+    });
+    gmFlash(flashId || 'gmMgFlash', r.message || 'Removido.');
+    if (document.getElementById('gmSec_inbox').classList.contains('active')) gmLoadInbox();
+  } catch {}
+}
+async function gmUndeleteListing() {
+  const auth = gmAuth(); if (!auth) return;
+  const id = document.getElementById('gmMgId').value.trim();
+  if (!id) { gmFlash('gmMgFlash', 'Informe o ID.', true); return; }
+  try {
+    const r = await apiCall(`${API}/gm/listing/undelete`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...auth, listing_id: id }),
+    });
+    gmFlash('gmMgFlash', r.message || 'Restaurado.');
+  } catch {}
+}
+
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
 </script>
 
 </body>
