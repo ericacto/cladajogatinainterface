@@ -139,7 +139,6 @@
   <div class="section">
     <h2>Roteiro (Mapas)</h2>
     <div id="mapSteps"></div>
-    <button onclick="addMapStep()">+ Adicionar Etapa</button>
   </div>
 
   <div class="section">
@@ -153,7 +152,6 @@
     <label>Personagem (opcional)</label>
     <select id="townCharacter"><option value="">— ninguém fica —</option></select>
     <div id="townMaterials"></div>
-    <button onclick="addTownMaterial()">+ Adicionar Material</button>
   </div>
 
   <button style="margin-top:10px" onclick="saveExpeditionPlan()">Salvar Plano de Expedição</button>
@@ -255,7 +253,7 @@
 
 <script>
 // Change this to your Fly.io URL once deployed, e.g. "https://quadro-de-avisos.fly.dev"
-const API = "https://quadro-de-avisos.fly.dev";
+const API = "http://localhost:8000";
 
 function clan() { return document.getElementById('clanName').value; }
 function pin() { return document.getElementById('clanPin').value; }
@@ -723,11 +721,14 @@ let expeditionState = {
   town: null,           // {character, materials:[[name,qty],...]} or null
 };
 
-// Habilidade slots: 6 total per character, but only some are usable depending
-// on level — Lv 1-3 => 1, Lv 4-6 => 2, Lv 7-9 => 3. The rest render greyed
-// out/disabled rather than being removed, so the player can always see the
-// full potential of the character.
-const TOTAL_ABILITY_SLOTS = 6;
+// Habilidade slots: 3 total per character (the max), but only some are usable
+// depending on level — Lv 1-3 => 1, Lv 4-6 => 2, Lv 7-9 => 3. The rest render
+// greyed out/disabled rather than being removed, so the player can always see
+// the full potential of the character.
+const TOTAL_ABILITY_SLOTS = 3;
+// Equipment: 6 ordered slots. Order matters (e.g. draw/use priority), so this
+// is a list of dropdowns rather than a click-to-toggle chip set.
+const TOTAL_EQUIPMENT_SLOTS = 6;
 function unlockedAbilitySlots(level) {
   const lvl = level || 1;
   if (lvl <= 3) return 1;
@@ -795,21 +796,17 @@ async function loadAdventurersTab() {
     const traits = (a.traits || []).map(t => `<span class="stat-chip">${t}</span>`).join('');
     const abilities = (a.abilities || []).map(t => `<span class="stat-chip">${t}</span>`).join('');
     const instr = (a.instructions || []).map(t => `<span class="stat-chip">${t}</span>`).join('');
-    const destiny = a.destiny && Object.keys(a.destiny).length
-      ? Object.entries(a.destiny).map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('') : '';
     return `
       <div class="char-card">
         <h3>${a.name} <span style="color:var(--muted); font-weight:normal; font-size:0.8em;">— ${a.class || '?'}, nível ${a.level ?? 1}</span></h3>
         <table class="stat-table">
           <tr><td>EXP</td><td>${a.exp ?? '—'}</td></tr>
-          <tr><td>Coragem</td><td>${a.courage ?? '—'}</td></tr>
           <tr><td>Mentor</td><td>${a.mentor || '—'}</td></tr>
           ${statRows}
         </table>
         ${traits ? `<label>Traços</label><div class="tag-row">${traits}</div>` : ''}
         ${abilities ? `<label>Habilidades</label><div class="tag-row">${abilities}</div>` : ''}
         ${instr ? `<label>Instruções Padrão</label><div class="tag-row">${instr}</div>` : ''}
-        ${destiny ? `<label>Destino</label><table class="stat-table">${destiny}</table>` : ''}
       </div>`;
   }).join('');
 }
@@ -1020,17 +1017,30 @@ function renderCharDetails(slot) {
       </div>`);
   }
 
-  const itemChips = roster.items.map(it => {
-    const selected = entry.equipment.includes(it.name);
-    const label = it.quantity != null ? `${it.name} (x${it.quantity})` : it.name;
-    return `<span class="chip ${selected ? 'selected' : ''}" onclick="toggleEquipment(${slot}, '${it.name.replace(/'/g, "\\'")}')">${label}</span>`;
-  }).join('');
+  const equipmentSlotsHtml = [];
+  for (let i = 0; i < TOTAL_EQUIPMENT_SLOTS; i++) {
+    const currentValue = entry.equipment[i] || '';
+    const chosenElsewhere = new Set(entry.equipment.filter((it, ii) => it && ii !== i));
+    const options = roster.items.filter(it => it.name === currentValue || !chosenElsewhere.has(it.name));
+    const optHtml = options.map(it => {
+      const label = it.quantity != null ? `${it.name} (x${it.quantity})` : it.name;
+      return `<option value="${it.name}" ${it.name === currentValue ? 'selected' : ''}>${label}</option>`;
+    }).join('');
+    equipmentSlotsHtml.push(`
+      <div class="ability-slot">
+        <div class="slot-label">Slot ${i + 1}</div>
+        <select onchange="setEquipmentSlot(${slot}, ${i}, this.value)">
+          <option value="">— vazio —</option>
+          ${optHtml}
+        </select>
+      </div>`);
+  }
 
   detailsDiv.innerHTML = `
     <label>Habilidades — ${unlocked} de ${TOTAL_ABILITY_SLOTS} slots liberados (nível ${(rosterChar && rosterChar.level) || 1})</label>
     <div class="ability-slots">${abilitySlotsHtml.join('')}</div>
-    <label>Equipamento (até 6) — clique para selecionar</label>
-    <div class="chip-list">${itemChips || '<span class="empty">estoque vazio</span>'}</div>
+    <label>Equipamento — até ${TOTAL_EQUIPMENT_SLOTS} itens, em ordem (a ordem de seleção importa)</label>
+    <div class="ability-slots">${roster.items.length ? equipmentSlotsHtml.join('') : '<span class="empty">estoque vazio</span>'}</div>
   `;
 }
 
@@ -1040,19 +1050,23 @@ function setAbilitySlot(slot, slotIndex, ability) {
   renderCharDetails(slot);
 }
 
-function toggleEquipment(slot, itemName) {
+function setEquipmentSlot(slot, slotIndex, itemName) {
   const entry = expeditionState.characters[slot];
-  const idx = entry.equipment.indexOf(itemName);
-  if (idx >= 0) {
-    entry.equipment.splice(idx, 1);
-  } else {
-    if (entry.equipment.length >= 6) { showError('Máximo de 6 itens de equipamento.'); return; }
-    entry.equipment.push(itemName);
-  }
+  entry.equipment[slotIndex] = itemName || '';
   renderCharDetails(slot);
 }
 
+// Roteiro is always exactly 3 lines — no adding/removing steps, just filling
+// in up to 3 legs of the route.
+const TOTAL_MAP_STEPS = 3;
+function ensureMapStepCount() {
+  while (expeditionState.map_steps.length < TOTAL_MAP_STEPS) {
+    expeditionState.map_steps.push({ map: '', floor: 1, time: '' });
+  }
+  expeditionState.map_steps.length = TOTAL_MAP_STEPS;
+}
 function renderMapSteps() {
+  ensureMapStepCount();
   const div = document.getElementById('mapSteps');
   div.innerHTML = '';
   const knownMapNames = Object.keys(roster.known_maps || {});
@@ -1077,31 +1091,30 @@ function renderMapSteps() {
         <option value="Tarde" ${step.time === 'Tarde' ? 'selected' : ''}>Tarde</option>
         <option value="Noite" ${step.time === 'Noite' ? 'selected' : ''}>Noite</option>
       </select>
-      <button class="remove-btn" onclick="removeMapStep(${idx})">x</button>
     `;
     div.appendChild(row);
   });
 }
-function addMapStep() {
-  expeditionState.map_steps.push({ map: '', floor: 1, time: '' });
-  renderMapSteps();
-}
 function updateMapStep(idx, field, value) {
   expeditionState.map_steps[idx][field] = field === 'floor' ? parseInt(value, 10) || 1 : value;
 }
-function removeMapStep(idx) {
-  expeditionState.map_steps.splice(idx, 1);
-  renderMapSteps();
-}
 
+// TODO: populate with the real catalog of standing-instruction options once
+// defined; placeholder list keeps the dropdown functional in the meantime.
+const EXPEDITION_INSTRUCTION_OPTIONS = [];
 function renderExpeditionInstructions() {
   const div = document.getElementById('expeditionInstructions');
   div.innerHTML = '';
+  const knownOptions = EXPEDITION_INSTRUCTION_OPTIONS;
   expeditionState.expedition_instructions.forEach((instr, idx) => {
     const row = document.createElement('div');
     row.style.cssText = 'display:flex; gap:6px; margin-bottom:6px;';
+    const optHtml = knownOptions.map(o => `<option value="${o}" ${instr === o ? 'selected' : ''}>${o}</option>`).join('');
     row.innerHTML = `
-      <input value="${instr.replace(/"/g, '&quot;')}" style="flex:1" onchange="updateExpeditionInstruction(${idx}, this.value)">
+      <select style="flex:1" onchange="updateExpeditionInstruction(${idx}, this.value)" ${knownOptions.length ? '' : 'disabled'}>
+        <option value="" ${!instr ? 'selected' : ''}>${knownOptions.length ? '— escolha uma instrução —' : 'nenhuma instrução cadastrada ainda'}</option>
+        ${optHtml}
+      </select>
       <button class="remove-btn" onclick="removeExpeditionInstruction(${idx})">x</button>
     `;
     div.appendChild(row);
@@ -1138,29 +1151,36 @@ function renderTownSection() {
   const matDiv = document.getElementById('townMaterials');
   matDiv.innerHTML = '';
   if (expeditionState.town) {
+    ensureTownMaterialCount();
+    const materialNames = roster.items.map(it => it.name);
     expeditionState.town.materials.forEach((mat, idx) => {
       const row = document.createElement('div');
       row.style.cssText = 'display:flex; gap:6px; margin-bottom:6px;';
+      const currentValue = mat[0] || '';
+      const chosenElsewhere = new Set(expeditionState.town.materials.filter((m, mi) => m[0] && mi !== idx).map(m => m[0]));
+      const options = materialNames.filter(n => n === currentValue || !chosenElsewhere.has(n));
+      const optHtml = options.map(n => `<option value="${n}" ${n === currentValue ? 'selected' : ''}>${n}</option>`).join('');
       row.innerHTML = `
-        <input placeholder="Material" value="${mat[0] || ''}" style="flex:2" onchange="updateTownMaterial(${idx}, 0, this.value)">
+        <select style="flex:2" onchange="updateTownMaterial(${idx}, 0, this.value)" ${materialNames.length ? '' : 'disabled'}>
+          <option value="" ${!currentValue ? 'selected' : ''}>${materialNames.length ? '— escolha um material —' : 'estoque vazio'}</option>
+          ${optHtml}
+        </select>
         <input type="number" placeholder="Qtd" value="${mat[1] || 1}" style="flex:1" onchange="updateTownMaterial(${idx}, 1, this.value)">
-        <button class="remove-btn" onclick="removeTownMaterial(${idx})">x</button>
       `;
       matDiv.appendChild(row);
     });
   }
 }
-function addTownMaterial() {
-  if (!expeditionState.town) { showError('Escolha um personagem para ficar no clã primeiro.'); return; }
-  expeditionState.town.materials.push(['', 1]);
-  renderTownSection();
+// Ficar no Clã materials are always exactly 5 lines, no adding/removing.
+const TOTAL_TOWN_MATERIAL_SLOTS = 5;
+function ensureTownMaterialCount() {
+  while (expeditionState.town.materials.length < TOTAL_TOWN_MATERIAL_SLOTS) {
+    expeditionState.town.materials.push(['', 1]);
+  }
+  expeditionState.town.materials.length = TOTAL_TOWN_MATERIAL_SLOTS;
 }
 function updateTownMaterial(idx, field, value) {
   expeditionState.town.materials[idx][field] = field === 1 ? (parseInt(value, 10) || 1) : value;
-}
-function removeTownMaterial(idx) {
-  expeditionState.town.materials.splice(idx, 1);
-  renderTownSection();
 }
 
 async function saveExpeditionPlan() {
@@ -1171,14 +1191,16 @@ async function saveExpeditionPlan() {
   const characters = expeditionState.characters.map(c => ({
     name: c.name,
     abilities: (c.abilities || []).filter(Boolean),
-    equipment: c.equipment || [],
+    equipment: (c.equipment || []).filter(Boolean),
   }));
   const body = {
     pin: pin(),
     characters,
     map_steps: expeditionState.map_steps,
     expedition_instructions: expeditionState.expedition_instructions.filter(x => x.trim()),
-    town: expeditionState.town,
+    town: expeditionState.town
+      ? { ...expeditionState.town, materials: expeditionState.town.materials.filter(m => m[0]) }
+      : null,
   };
   try {
     await apiCall(`${API}/expedition/${encodeURIComponent(clan())}`, {
