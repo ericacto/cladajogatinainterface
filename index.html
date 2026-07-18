@@ -83,6 +83,14 @@
   .subtab-note { color: var(--muted); font-size: 0.85em; font-style: italic; margin: -4px 0 12px; }
   .durability-bar { background: #1c1912; border-radius: 4px; height: 6px; margin-top: 6px; overflow: hidden; }
   .durability-bar > div { background: var(--accent); height: 100%; }
+
+  .ability-slots { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-top: 4px; }
+  .ability-slot { border: 1px solid var(--muted); border-radius: 6px; padding: 6px 8px; }
+  .ability-slot select { width: 100%; }
+  .ability-slot .slot-label { font-size: 0.75em; color: var(--muted); margin-bottom: 2px; }
+  .ability-slot.locked { opacity: 0.4; background: repeating-linear-gradient(45deg, #1c1912, #1c1912 6px, #14120e 6px, #14120e 12px); }
+  .ability-slot.locked select, .ability-slot.locked * { pointer-events: none; }
+  .recipe-known { color: var(--accent); font-size: 0.75em; margin-left: 6px; }
 </style>
 </head>
 <body>
@@ -100,13 +108,12 @@
 
 <div class="tabs">
   <button id="tabExpeditionBtn" class="active" onclick="showTab('expedition')">Plano de Expedição</button>
-  <button id="tabDiaryBtn" onclick="showTab('diary')">Diário de Expedição</button>
   <button id="tabAdventurersBtn" onclick="showTab('adventurers')">Aventureiros</button>
   <button id="tabInventoryBtn" onclick="showTab('inventory')">Inventário</button>
-  <button id="tabRecipesBtn" onclick="showTab('recipes')">Receitas</button>
   <button id="tabKnowledgeBtn" onclick="showTab('knowledge')">Conhecimento</button>
-  <button id="tabInboxBtn" onclick="showTab('inbox')">Caixa de Entrada<span class="badge" id="inboxBadge" style="display:none">0</span></button>
   <button id="tabPostingsBtn" onclick="showTab('postings')">Quadro de Avisos</button>
+  <button id="tabDiaryBtn" onclick="showTab('diary')">Diário de Expedição</button>
+  <button id="tabInboxBtn" onclick="showTab('inbox')">Caixa de Entrada<span class="badge" id="inboxBadge" style="display:none">0</span></button>
 </div>
 
 <!-- First thing on the page, open by default: latest GM announcements, then
@@ -180,24 +187,22 @@
   </div>
 </div>
 
-<div id="recipesTab" style="display:none">
-  <p class="subtab-note" id="recipesNote"></p>
-  <div class="grid-cards" id="recipesList"></div>
-</div>
-
 <div id="knowledgeTab" style="display:none">
+  <div class="section">
+    <h2>Receitas</h2>
+    <p class="subtab-note">Catálogo de itens conhecidos pelo mundo — receitas já descobertas pelo seu clã aparecem marcadas.</p>
+    <div class="grid-cards" id="recipesList"></div>
+  </div>
+  <div class="section">
+    <h2>Mapas Descobertos</h2>
+    <div id="knowledgeMaps"></div>
+  </div>
   <div class="section">
     <h2>Habilidades Conhecidas</h2>
     <div class="tag-row" id="knowledgeAbilities"></div>
   </div>
   <div class="section">
-    <h2>Mapas Descobertos</h2>
-    <p class="subtab-note" id="knowledgeMapsNote"></p>
-    <div id="knowledgeMaps"></div>
-  </div>
-  <div class="section">
     <h2>Bestiário (Inimigos Vistos)</h2>
-    <p class="subtab-note" id="knowledgeBestiaryNote"></p>
     <div id="knowledgeBestiary"></div>
   </div>
 </div>
@@ -710,15 +715,32 @@ renderNewPostFields();
 // Expedition Plan
 // ---------------------------------------------------------------------------
 
-let roster = { characters: [], items: [] };
+let roster = { characters: [], items: [], known_maps: {} };
 let expeditionState = {
-  characters: [],       // up to 3: {name, abilities:[], equipment:[], instructions:[]}
+  characters: [],       // up to 3: {name, abilities:[], equipment:[]}
   map_steps: [],        // {map, floor, time}
   expedition_instructions: [],
   town: null,           // {character, materials:[[name,qty],...]} or null
 };
 
-const TABS = ['expedition', 'diary', 'adventurers', 'inventory', 'recipes', 'knowledge', 'inbox', 'postings'];
+// Habilidade slots: 6 total per character, but only some are usable depending
+// on level — Lv 1-3 => 1, Lv 4-6 => 2, Lv 7-9 => 3. The rest render greyed
+// out/disabled rather than being removed, so the player can always see the
+// full potential of the character.
+const TOTAL_ABILITY_SLOTS = 6;
+function unlockedAbilitySlots(level) {
+  const lvl = level || 1;
+  if (lvl <= 3) return 1;
+  if (lvl <= 6) return 2;
+  return 3; // Lv 7-9 (and above, capped) => 3
+}
+
+// Order matches the product spec: Expedition planner -> Adventurers ->
+// Inventory -> Knowledge (recipes/maps/abilities) -> Town board, with the
+// diary/inbox as secondary tabs after. On close of the top banner, the page
+// simply stays on 'expedition' (see topBanner's close button), which is also
+// the default currentTab below.
+const TABS = ['expedition', 'adventurers', 'inventory', 'knowledge', 'postings', 'diary', 'inbox'];
 let currentTab = 'expedition';
 let loadedTabs = new Set();
 
@@ -728,7 +750,6 @@ function showTab(tab) {
   document.getElementById('diaryTab').style.display = tab === 'diary' ? 'block' : 'none';
   document.getElementById('adventurersTab').style.display = tab === 'adventurers' ? 'block' : 'none';
   document.getElementById('inventoryTab').style.display = tab === 'inventory' ? 'block' : 'none';
-  document.getElementById('recipesTab').style.display = tab === 'recipes' ? 'block' : 'none';
   document.getElementById('knowledgeTab').style.display = tab === 'knowledge' ? 'block' : 'none';
   document.getElementById('inboxTab').style.display = tab === 'inbox' ? 'block' : 'none';
   document.getElementById('postingsTab').style.display = tab === 'postings' ? 'block' : 'none';
@@ -737,7 +758,6 @@ function showTab(tab) {
   document.getElementById('tabDiaryBtn').classList.toggle('active', tab === 'diary');
   document.getElementById('tabAdventurersBtn').classList.toggle('active', tab === 'adventurers');
   document.getElementById('tabInventoryBtn').classList.toggle('active', tab === 'inventory');
-  document.getElementById('tabRecipesBtn').classList.toggle('active', tab === 'recipes');
   document.getElementById('tabKnowledgeBtn').classList.toggle('active', tab === 'knowledge');
   document.getElementById('tabInboxBtn').classList.toggle('active', tab === 'inbox');
   document.getElementById('tabPostingsBtn').classList.toggle('active', tab === 'postings');
@@ -747,7 +767,6 @@ function showTab(tab) {
   if (tab === 'expedition') loadExpeditionTab();
   else if (tab === 'adventurers') loadAdventurersTab();
   else if (tab === 'inventory') loadInventoryTab();
-  else if (tab === 'recipes') loadRecipesTab();
   else if (tab === 'knowledge') loadKnowledgeTab();
 }
 
@@ -846,37 +865,10 @@ function renderItemList(containerId, items, isEquipment) {
 // Receitas & Conhecimento (GET /clans/{clan}/knowledge)
 // ---------------------------------------------------------------------------
 
-async function loadRecipesTab() {
-  let data;
-  try {
-    data = await apiCall(`${API}/clans/${encodeURIComponent(clan())}/knowledge`);
-  } catch {
-    return;
-  }
-  document.getElementById('recipesNote').textContent = (data.notes || {}).recipes || '';
-  const container = document.getElementById('recipesList');
-  const recipes = data.recipes || [];
-  if (recipes.length === 0) {
-    container.innerHTML = `<div class="empty">Nenhuma receita cadastrada.</div>`;
-    return;
-  }
-  container.innerHTML = recipes.map(r => {
-    let matsHtml = '<span class="empty">sem lista de materiais</span>';
-    if (Array.isArray(r.recipe)) {
-      matsHtml = r.recipe.map(m => Array.isArray(m) ? `${m[1]}x ${m[0]}` : String(m))
-        .map(c => `<span class="stat-chip">${c}</span>`).join('');
-    } else if (r.recipe && typeof r.recipe === 'object') {
-      matsHtml = Object.entries(r.recipe).map(([k, v]) => `<span class="stat-chip">${v}x ${k}</span>`).join('');
-    }
-    return `
-      <div class="item-card">
-        <div class="title">${r.name}</div>
-        <div style="color:var(--muted); font-size:0.85em">${r.type || ''}</div>
-        <div class="tag-row" style="margin-top:6px;">${matsHtml}</div>
-      </div>`;
-  }).join('');
-}
-
+// Single source for the Conhecimento tab: recipes, mapas descobertos,
+// habilidades conhecidas, and bestiário all come off GET /clans/{clan}/knowledge
+// (see app.get_knowledge / board.get_clan_knowledge — maps/bestiary/classes are
+// now real per-clan data from Clan.knowledge_json, not empty placeholders).
 async function loadKnowledgeTab() {
   let data;
   try {
@@ -884,19 +876,47 @@ async function loadKnowledgeTab() {
   } catch {
     return;
   }
+
+  const recipes = data.recipes || [];
+  const recipesContainer = document.getElementById('recipesList');
+  recipesContainer.innerHTML = recipes.length === 0 ? `<div class="empty">Nenhuma receita cadastrada.</div>` :
+    recipes.map(r => {
+      let matsHtml = '<span class="empty">sem lista de materiais</span>';
+      if (Array.isArray(r.recipe)) {
+        matsHtml = r.recipe.map(m => Array.isArray(m) ? `${m[1]}x ${m[0]}` : String(m))
+          .map(c => `<span class="stat-chip">${c}</span>`).join('');
+      } else if (r.recipe && typeof r.recipe === 'object') {
+        matsHtml = Object.entries(r.recipe).map(([k, v]) => `<span class="stat-chip">${v}x ${k}</span>`).join('');
+      }
+      return `
+        <div class="item-card">
+          <div class="title">${r.name}${r.known ? '<span class="recipe-known">✓ conhecida</span>' : ''}</div>
+          <div style="color:var(--muted); font-size:0.85em">${r.type || ''}</div>
+          <div class="tag-row" style="margin-top:6px;">${matsHtml}</div>
+        </div>`;
+    }).join('');
+
   const abilities = data.abilities || [];
   document.getElementById('knowledgeAbilities').innerHTML = abilities.length
     ? abilities.map(a => `<span class="stat-chip">${a}</span>`).join('')
     : `<span class="empty">Nenhuma habilidade conhecida por este clã ainda.</span>`;
 
-  document.getElementById('knowledgeMapsNote').textContent = (data.notes || {}).maps || '';
-  document.getElementById('knowledgeMaps').innerHTML = (data.maps || []).length
-    ? data.maps.map(m => `<span class="stat-chip">${m}</span>`).join('')
+  // maps: {mapName: [floors]}
+  const maps = data.maps || {};
+  const mapNames = Object.keys(maps);
+  document.getElementById('knowledgeMaps').innerHTML = mapNames.length
+    ? mapNames.map(m => `<span class="stat-chip">${m} (andares: ${(maps[m] || []).join(', ') || '—'})</span>`).join('')
     : `<div class="empty">Nenhum mapa registrado ainda.</div>`;
 
-  document.getElementById('knowledgeBestiaryNote').textContent = (data.notes || {}).bestiary || '';
-  document.getElementById('knowledgeBestiary').innerHTML = (data.bestiary || []).length
-    ? data.bestiary.map(b => `<span class="stat-chip">${b}</span>`).join('')
+  // bestiary: {enemyName: {stats, abilities, traits}}
+  const bestiary = data.bestiary || {};
+  const enemyNames = Object.keys(bestiary);
+  document.getElementById('knowledgeBestiary').innerHTML = enemyNames.length
+    ? enemyNames.map(name => {
+        const entry = bestiary[name] || {};
+        const traits = (entry.traits || []).join(', ');
+        return `<div class="item-card"><div class="title">${name}</div>${traits ? `<div class="subtab-note" style="margin:4px 0 0;">Traços: ${traits}</div>` : ''}</div>`;
+      }).join('')
     : `<div class="empty">Nenhum inimigo registrado ainda.</div>`;
 }
 
@@ -960,7 +980,7 @@ function setCharSlotName(slot, name) {
     renderExpeditionCharacters();
     return;
   }
-  const entry = { name, abilities: [], equipment: [], instructions: [] };
+  const entry = { name, abilities: [], equipment: [] };
   // Keep the array dense/ordered by slot for simplicity.
   const chars = expeditionState.characters.slice();
   chars[slot] = entry;
@@ -975,10 +995,30 @@ function renderCharDetails(slot) {
   const detailsDiv = document.getElementById(`charDetails${slot}`);
   if (!detailsDiv) return;
 
-  const abilityChips = known.map(a => {
-    const selected = entry.abilities.includes(a);
-    return `<span class="chip ${selected ? 'selected' : ''}" onclick="toggleAbility(${slot}, '${a.replace(/'/g, "\\'")}')">${a}</span>`;
-  }).join('');
+  const unlocked = unlockedAbilitySlots(rosterChar && rosterChar.level);
+  const abilitySlotsHtml = [];
+  for (let i = 0; i < TOTAL_ABILITY_SLOTS; i++) {
+    if (i >= unlocked) {
+      abilitySlotsHtml.push(`
+        <div class="ability-slot locked">
+          <div class="slot-label">Slot ${i + 1} — bloqueado (nível insuficiente)</div>
+          <select disabled><option>—</option></select>
+        </div>`);
+      continue;
+    }
+    const currentValue = entry.abilities[i] || '';
+    const chosenElsewhere = new Set(entry.abilities.filter((a, ai) => a && ai !== i));
+    const options = known.filter(a => a === currentValue || !chosenElsewhere.has(a));
+    const optHtml = options.map(a => `<option value="${a}" ${a === currentValue ? 'selected' : ''}>${a}</option>`).join('');
+    abilitySlotsHtml.push(`
+      <div class="ability-slot">
+        <div class="slot-label">Slot ${i + 1}</div>
+        <select onchange="setAbilitySlot(${slot}, ${i}, this.value)">
+          <option value="">— vazio —</option>
+          ${optHtml}
+        </select>
+      </div>`);
+  }
 
   const itemChips = roster.items.map(it => {
     const selected = entry.equipment.includes(it.name);
@@ -986,32 +1026,17 @@ function renderCharDetails(slot) {
     return `<span class="chip ${selected ? 'selected' : ''}" onclick="toggleEquipment(${slot}, '${it.name.replace(/'/g, "\\'")}')">${label}</span>`;
   }).join('');
 
-  const instrRows = entry.instructions.map((instr, idx) => `
-    <div style="display:flex; gap:6px; margin-bottom:4px;">
-      <input value="${instr.replace(/"/g, '&quot;')}" onchange="setInstruction(${slot}, ${idx}, this.value)" style="flex:1">
-      <button class="remove-btn" onclick="removeInstruction(${slot}, ${idx})">x</button>
-    </div>`).join('');
-
   detailsDiv.innerHTML = `
-    <label>Habilidades (até 3) — clique para selecionar</label>
-    <div class="chip-list">${abilityChips || '<span class="empty">nenhuma habilidade conhecida</span>'}</div>
+    <label>Habilidades — ${unlocked} de ${TOTAL_ABILITY_SLOTS} slots liberados (nível ${(rosterChar && rosterChar.level) || 1})</label>
+    <div class="ability-slots">${abilitySlotsHtml.join('')}</div>
     <label>Equipamento (até 6) — clique para selecionar</label>
     <div class="chip-list">${itemChips || '<span class="empty">estoque vazio</span>'}</div>
-    <label>Instruções (até 3)</label>
-    ${instrRows}
-    ${entry.instructions.length < 3 ? `<button onclick="addInstruction(${slot})">+ Instrução</button>` : ''}
   `;
 }
 
-function toggleAbility(slot, ability) {
+function setAbilitySlot(slot, slotIndex, ability) {
   const entry = expeditionState.characters[slot];
-  const idx = entry.abilities.indexOf(ability);
-  if (idx >= 0) {
-    entry.abilities.splice(idx, 1);
-  } else {
-    if (entry.abilities.length >= 3) { showError('Máximo de 3 habilidades.'); return; }
-    entry.abilities.push(ability);
-  }
+  entry.abilities[slotIndex] = ability || '';
   renderCharDetails(slot);
 }
 
@@ -1027,26 +1052,24 @@ function toggleEquipment(slot, itemName) {
   renderCharDetails(slot);
 }
 
-function addInstruction(slot) {
-  expeditionState.characters[slot].instructions.push('');
-  renderCharDetails(slot);
-}
-function setInstruction(slot, idx, value) {
-  expeditionState.characters[slot].instructions[idx] = value;
-}
-function removeInstruction(slot, idx) {
-  expeditionState.characters[slot].instructions.splice(idx, 1);
-  renderCharDetails(slot);
-}
-
 function renderMapSteps() {
   const div = document.getElementById('mapSteps');
   div.innerHTML = '';
+  const knownMapNames = Object.keys(roster.known_maps || {});
   expeditionState.map_steps.forEach((step, idx) => {
     const row = document.createElement('div');
     row.className = 'map-step-row';
+    // Map is a dropdown of maps this clan actually knows about (knowledge.maps),
+    // not free text — a clan can't route an expedition through a map it hasn't
+    // discovered yet. Falls back to a disabled placeholder if none are known.
+    const mapOptions = knownMapNames.length
+      ? knownMapNames.map(m => `<option value="${m}" ${step.map === m ? 'selected' : ''}>${m}</option>`).join('')
+      : '';
     row.innerHTML = `
-      <input placeholder="Mapa (ex: Floresta)" value="${step.map || ''}" onchange="updateMapStep(${idx}, 'map', this.value)">
+      <select onchange="updateMapStep(${idx}, 'map', this.value)" ${knownMapNames.length ? '' : 'disabled'}>
+        <option value="" ${!step.map ? 'selected' : ''}>${knownMapNames.length ? '— escolha um mapa —' : 'nenhum mapa conhecido ainda'}</option>
+        ${mapOptions}
+      </select>
       <input type="number" placeholder="Andar" value="${step.floor || 1}" style="max-width:80px" onchange="updateMapStep(${idx}, 'floor', this.value)">
       <select onchange="updateMapStep(${idx}, 'time', this.value)">
         <option value="" ${!step.time ? 'selected' : ''}>—</option>
@@ -1141,9 +1164,18 @@ function removeTownMaterial(idx) {
 }
 
 async function saveExpeditionPlan() {
+  // Ability slots are stored sparse/with placeholders for rendering (empty
+  // string per unfilled slot); the backend only wants the abilities actually
+  // chosen. There's no per-character "instructions" field anymore — only the
+  // expedition-level "Instruções Gerais" survive.
+  const characters = expeditionState.characters.map(c => ({
+    name: c.name,
+    abilities: (c.abilities || []).filter(Boolean),
+    equipment: c.equipment || [],
+  }));
   const body = {
     pin: pin(),
-    characters: expeditionState.characters,
+    characters,
     map_steps: expeditionState.map_steps,
     expedition_instructions: expeditionState.expedition_instructions.filter(x => x.trim()),
     town: expeditionState.town,
